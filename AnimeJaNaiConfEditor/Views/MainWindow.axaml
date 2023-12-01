@@ -21,13 +21,15 @@
 			<Setter Property="VerticalAlignment" Value="Center"/>
 		</Style>
 		<Style Selector="Border.border">
-
 			<Setter Property="Margin" Value="0,10,0,0" />
 			<Setter Property="CornerRadius" Value="5" />
 			<Setter Property="BorderBrush" Value="#33888888" />
 			<Setter Property="BorderThickness" Value="1" />
 			<Setter Property="Padding" Value="10" />
 		</Style>
+    <Style Selector="Button.active">
+      <Setter Property="Background" Value="#ff0073cf" />
+    </Style>
 	</Window.Styles>
 
 	<Design.DataContext>
@@ -41,8 +43,8 @@
 
 	<Grid ColumnDefinitions="300,*" RowDefinitions="*">
 		<StackPanel Grid.Column="0" Background="#33000000">
-			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}">
-				<StackPanel Orientation="Horizontal">
+			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}" Classes.active="{Binding ShowGlobalSettings}">
+				<StackPanel Orientation="Horizontal" >
 					<materialIcons:MaterialIcon Kind="Gear" VerticalAlignment="Center" />
 					<TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Global Settings</TextBlock>
 				</StackPanel>
@@ -50,7 +52,7 @@
 			<TextBlock Margin="10">
 				Default Profiles (Read-only)
 			</TextBlock>
-			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="1">
+			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="1" Classes.active="{Binding DefaultProfile1Active}">
 				<StackPanel>
 					<StackPanel Orientation="Horizontal">
 						<materialIcons:MaterialIcon Kind="Number1Circle" VerticalAlignment="Center" />
@@ -59,10 +61,10 @@
 						</TextBlock>
 						<TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+1)" />
 					</StackPanel>
-					<TextBlock Margin="0,5,10,0" FontSize="10" Foreground="Gray">Minimum Suggested GPU: NVIDIA RTX 4090</TextBlock>
+					<TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5">Minimum Suggested GPU: NVIDIA RTX 4090</TextBlock>
 				</StackPanel>
 			</Button>
-			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="2">
+			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="2" Classes.active="{Binding DefaultProfile2Active}">
 				<StackPanel>
 					<StackPanel Orientation="Horizontal">
 						<materialIcons:MaterialIcon Kind="Number2Circle" VerticalAlignment="Center" />
@@ -71,10 +73,10 @@
 						</TextBlock>
 						<TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+2)" />
 					</StackPanel>
-					<TextBlock Margin="0,5,10,0" FontSize="10" Foreground="Gray">Minimum Suggested GPU: NVIDIA RTX 3080</TextBlock>
+					<TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5">Minimum Suggested GPU: NVIDIA RTX 3080</TextBlock>
 				</StackPanel>
 			</Button>
-			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="3">
+			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="3" Classes.active="{Binding DefaultProfile3Active}">
 				<StackPanel>
 					<StackPanel Orientation="Horizontal">
 						<materialIcons:MaterialIcon Kind="Number3Circle" VerticalAlignment="Center" />
@@ -83,7 +85,7 @@
 						</TextBlock>
 						<TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+3)" />
 					</StackPanel>
-					<TextBlock Margin="0,5,10,0" FontSize="10" Foreground="Gray">Minimum Suggested GPU: NVIDIA RTX 3060</TextBlock>
+					<TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5">Minimum Suggested GPU: NVIDIA RTX 3060</TextBlock>
 				</StackPanel>
 			</Button>
 			<TextBlock Margin="10">
@@ -92,7 +94,10 @@
 			<ItemsControl ItemsSource="{Binding UpscaleSlots}">
 				<ItemsControl.ItemTemplate>
 					<DataTemplate x:DataType="vm:UpscaleSlot">
-						<Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowCustomProfile}" CommandParameter="{Binding SlotNumber}">
+						<Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}" 
+                    Classes.active="{Binding ActiveSlot}"
+                    Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowCustomProfile}" 
+                    CommandParameter="{Binding SlotNumber}">
 							<StackPanel>
 								<StackPanel Orientation="Horizontal">
 									<materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />

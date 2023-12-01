@@ -117,8 +117,18 @@ chain_2_rife=no";
         [DataMember] public bool ShowDefaultProfiles
         {
             get => _showDefaultProfiles;
-            set => this.RaiseAndSetIfChanged(ref _showDefaultProfiles, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _showDefaultProfiles, value);
+                this.RaisePropertyChanged(nameof(DefaultProfile1Active));
+                this.RaisePropertyChanged(nameof(DefaultProfile2Active));
+                this.RaisePropertyChanged(nameof(DefaultProfile3Active));
+            }
         }
+
+        public bool DefaultProfile1Active => ShowDefaultProfiles && SelectedSlotNumber == 1.ToString();
+        public bool DefaultProfile2Active => ShowDefaultProfiles && SelectedSlotNumber == 2.ToString();
+        public bool DefaultProfile3Active => ShowDefaultProfiles && SelectedSlotNumber == 3.ToString();
 
         private bool _showCustomProfiles = true; // TODO 
         [DataMember] public bool ShowCustomProfiles
@@ -136,6 +146,9 @@ chain_2_rife=no";
             {
                 this.RaiseAndSetIfChanged(ref _selectedSlotNumber, value);
                 this.RaisePropertyChanged(nameof(CurrentSlot));
+                this.RaisePropertyChanged(nameof(DefaultProfile1Active));
+                this.RaisePropertyChanged(nameof(DefaultProfile2Active));
+                this.RaisePropertyChanged(nameof(DefaultProfile3Active));
             }
         }
 
@@ -502,9 +515,25 @@ chain_2_rife=no";
             {
                 Vm?.WriteAnimeJaNaiConf();
             });
+
+            this.WhenAnyValue(x => x.Vm).Subscribe(x =>
+            {
+                sub?.Dispose();
+                sub = Vm.WhenAnyValue(x => x.SelectedSlotNumber, x => x.ShowCustomProfiles).Subscribe(x =>
+                {
+                    this.RaisePropertyChanged(nameof(ActiveSlot));
+                });
+            });
         }
 
-        public MainWindowViewModel? Vm { get; set; }
+        private IDisposable? sub;
+
+        private MainWindowViewModel? _vm;
+        public MainWindowViewModel? Vm 
+        { 
+            get => _vm; 
+            set => this.RaiseAndSetIfChanged(ref _vm, value); 
+        }
 
         private string _slotNumber = string.Empty;
         [DataMember]
@@ -513,6 +542,8 @@ chain_2_rife=no";
             get => _slotNumber;
             set => this.RaiseAndSetIfChanged(ref _slotNumber, value);
         }
+
+        public bool ActiveSlot => (Vm?.ShowCustomProfiles ?? false) && SlotNumber == Vm?.SelectedSlotNumber;
 
         public string SlotIcon => $"Number{SlotNumber}Circle";
 
