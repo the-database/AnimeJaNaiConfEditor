@@ -24,7 +24,8 @@ namespace AnimeJaNaiConfEditor.ViewModels
     {
         public MainWindowViewModel()
         {
-            ReadAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"));
+            DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(DEFAULT_PROFILES_CONF));
+            UpscaleSlots = ReadAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"));
 
             this.WhenAnyValue(
                 x => x.EnableLogging,
@@ -32,25 +33,72 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 x => x.DirectMlSelected,
                 x => x.NcnnSelected).Subscribe(x =>
                 {
-                    WriteAnimeJaNaiConf(Path.GetFullPath(@".\animejanai-test.conf"));
+                    WriteAnimeJaNaiConf();
                 });
-
-            //CurrentSlot.WhenAnyValue(x => x.ProfileName, x => x.Chains).Subscribe(x =>
-            //{
-            //    WriteAnimeJaNaiConf(Path.GetFullPath(@".\animejanai-test.conf"));
-            //});
-
-            // Subscribe to changes in any property of YourModel
-            //this.WhenAnyValue(x => x.UpscaleSlots)
-            //    .Where(model => model != null) // Add a filter if needed
-            //    .Select(model => model.WhenAnyValue(y => y.Property1, y => y.Property2, ...)) // Add nested properties
-            //    .Switch()
-            //    .Subscribe(_ =>
-            //    {
-            //        // Handle the change
-            //        Console.WriteLine("Property changed");
-            //    });
         }
+
+        private static readonly string DEFAULT_PROFILES_CONF = @"[slot_1]
+profile_name=Quality
+chain_1_min_resolution=0x0
+chain_1_max_resolution=1280x720
+chain_1_min_fps=0
+chain_1_max_fps=31
+chain_1_model_1_resize_height_before_upscale=0
+chain_1_model_1_resize_factor_before_upscale=100
+chain_1_model_1_name=2x_AnimeJaNai_SD_V1betaRC9_Compact
+chain_1_rife=no
+chain_2_min_resolution=1280x720
+chain_2_max_resolution=1920x1080
+chain_2_min_fps=0
+chain_2_max_fps=31
+chain_2_model_1_resize_height_before_upscale=0
+chain_2_model_1_resize_factor_before_upscale=100
+chain_2_model_1_name=2x_AnimeJaNai_HD_V3_Compact
+chain_2_rife=no
+chain_3_min_resolution=0x0
+chain_3_max_resolution=1920x1080
+chain_3_min_fps=0
+chain_3_max_fps=61
+chain_3_model_1_resize_height_before_upscale=0
+chain_3_model_1_resize_factor_before_upscale=100
+chain_3_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
+chain_3_rife=no
+[slot_2]
+profile_name=Balanced
+chain_1_min_resolution=0x0
+chain_1_max_resolution=1280x720
+chain_1_min_fps=0
+chain_1_max_fps=31
+chain_1_model_1_resize_height_before_upscale=0
+chain_1_model_1_resize_factor_before_upscale=100
+chain_1_model_1_name=2x_AnimeJaNai_SD_V1betaRC9_Compact
+chain_1_rife=no
+chain_2_min_resolution=1280x720
+chain_2_max_resolution=1920x1080
+chain_2_min_fps=0
+chain_2_max_fps=31
+chain_2_model_1_resize_height_before_upscale=0
+chain_2_model_1_resize_factor_before_upscale=100
+chain_2_model_1_name=2x_AnimeJaNai_HD_V3_UltraCompact
+chain_2_rife=no
+[slot_3]
+profile_name=Performance
+chain_1_min_resolution=0x0
+chain_1_max_resolution=1280x720
+chain_1_min_fps=0
+chain_1_max_fps=31
+chain_1_model_1_resize_height_before_upscale=0
+chain_1_model_1_resize_factor_before_upscale=100
+chain_1_model_1_name=2x_AnimeJaNai_SD_V1betaRC9_Compact
+chain_1_rife=no
+chain_2_min_resolution=1280x720
+chain_2_max_resolution=1920x1080
+chain_2_min_fps=0
+chain_2_max_fps=31
+chain_2_model_1_resize_height_before_upscale=0
+chain_2_model_1_resize_factor_before_upscale=100
+chain_2_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
+chain_2_rife=no";
 
         private CancellationTokenSource? _cancellationTokenSource;
         private Process? _runningProcess = null;
@@ -116,12 +164,13 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public UpscaleSlot CurrentSlot
         {
-            get => UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault();
+            get => ShowCustomProfiles ? UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : 
+                ShowDefaultProfiles ? DefaultUpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : null;
         }
 
         public void AddChain()
         {
-            CurrentSlot.Chains.Add(new UpscaleChain());
+            CurrentSlot.Chains.Add(new UpscaleChain { Vm = this });
             UpdateChainHeaders();
         }
 
@@ -199,7 +248,15 @@ namespace AnimeJaNaiConfEditor.ViewModels
             }
         }
 
-        private AvaloniaList<UpscaleSlot> _upscaleSlots = new();
+        private AvaloniaList<UpscaleSlot> _defaultUpscaleSlots = [];
+        [DataMember]
+        public AvaloniaList<UpscaleSlot> DefaultUpscaleSlots
+        {
+            get => _defaultUpscaleSlots;
+            set => this.RaiseAndSetIfChanged(ref _defaultUpscaleSlots, value);
+        }
+
+        private AvaloniaList<UpscaleSlot> _upscaleSlots = [];
         [DataMember]
         public AvaloniaList<UpscaleSlot> UpscaleSlots
         {
@@ -286,9 +343,13 @@ namespace AnimeJaNaiConfEditor.ViewModels
             Console.WriteLine("OK");
         }
 
-        public void ReadAnimeJaNaiConf(string fullPath)
+        public AvaloniaList<UpscaleSlot> ReadAnimeJaNaiConf(string fullPath)
         {
-            var parser = new ConfigParser(fullPath);
+            return ReadAnimeJaNaiConf(new ConfigParser(fullPath));
+        }
+
+        public AvaloniaList<UpscaleSlot> ReadAnimeJaNaiConf(ConfigParser parser)
+        {
             var slots = new Dictionary<string, UpscaleSlot>();
 
             EnableLogging = ParseBool(parser.GetValue("global", "logging", "no"));
@@ -314,7 +375,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 if (section.SectionName != "global")
                 {
                     var currentSlotNumber = Regex.Match(section.SectionName, @"slot_(\d+)").Groups[1].Value;
-                    //var currentSlot = new UpscaleSlot();
 
                     var chains = new Dictionary<string, UpscaleChain>();
                     var models = new Dictionary<string, Dictionary<string, UpscaleModel>>();
@@ -329,6 +389,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
                             chains[currentChainNumber] = new UpscaleChain
                             {
+                                Vm = this,
                                 ChainNumber = currentChainNumber,
                                 MinResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_resolution"),
                                 MaxResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_resolution"),
@@ -355,6 +416,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
                                 models[currentChainNumber][currentModelNumber] = new UpscaleModel
                                 {
+                                    Vm = this,
                                     AllModels = GetAllModels(),
                                     ModelNumber = currentModelNumber,
                                     Name = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_name", "0x0"),
@@ -372,6 +434,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
                     slots[currentSlotNumber] = new UpscaleSlot
                     {
+                        Vm = this,
                         SlotNumber = currentSlotNumber,
                         ProfileName = parser.GetValue(section.SectionName, "profile_name", "New Profile"),
                         Chains = new AvaloniaList<UpscaleChain>(chains.Values.ToList())
@@ -379,12 +442,17 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 }
             }
 
-            UpscaleSlots = new AvaloniaList<UpscaleSlot>(slots.Values);
+            return new AvaloniaList<UpscaleSlot>(slots.Values);
         }
 
         static bool ParseBool(string value)
         {
             return value?.ToLower() == "yes";
+        }
+
+        public void WriteAnimeJaNaiConf()
+        {
+            WriteAnimeJaNaiConf(Path.GetFullPath(@".\animejanai-test.conf"));
         }
 
         public void WriteAnimeJaNaiConf(string fullPath)
@@ -424,6 +492,20 @@ namespace AnimeJaNaiConfEditor.ViewModels
     [DataContract]
     public class UpscaleSlot: ReactiveObject
     {
+        public UpscaleSlot()
+        {
+            this.WhenAnyValue(
+                x => x.SlotNumber,
+                x => x.ProfileName,
+                x => x.Chains.Count
+            ).Subscribe(x =>
+            {
+                Vm?.WriteAnimeJaNaiConf();
+            });
+        }
+
+        public MainWindowViewModel? Vm { get; set; }
+
         private string _slotNumber = string.Empty;
         [DataMember]
         public string SlotNumber
@@ -456,6 +538,23 @@ namespace AnimeJaNaiConfEditor.ViewModels
     [DataContract]
     public class UpscaleChain : ReactiveObject
     {
+        public UpscaleChain()
+        {
+            this.WhenAnyValue(
+                x => x.ChainNumber,
+                x => x.MinResolution,
+                x => x.MaxResolution,
+                x => x.MinFps,
+                x => x.MaxFps,
+                x => x.Models.Count
+            ).Subscribe(x =>
+            {
+                Vm?.WriteAnimeJaNaiConf();
+            });
+        }
+
+        public MainWindowViewModel? Vm { get; set; }
+
         private string _chainNumber = string.Empty;
         [DataMember]
         public string ChainNumber
@@ -516,6 +615,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
         {
             Models.Add(new UpscaleModel
             {
+                Vm = Vm,
                 AllModels = MainWindowViewModel.GetAllModels(),
             });
 
@@ -549,6 +649,21 @@ namespace AnimeJaNaiConfEditor.ViewModels
     [DataContract]
     public class UpscaleModel : ReactiveObject
     {
+        public UpscaleModel()
+        {
+            this.WhenAnyValue(
+                x => x.ModelNumber,
+                x => x.ResizeHeightBeforeUpscale,
+                x => x.ResizeFactorBeforeUpscale,
+                x => x.Name
+            ).Subscribe(x =>
+            {
+                Vm?.WriteAnimeJaNaiConf();
+            });
+        }
+
+        public MainWindowViewModel? Vm { get; set; }
+
         private AvaloniaList<string> _allModels = [];
         [DataMember]
         public AvaloniaList<string> AllModels
