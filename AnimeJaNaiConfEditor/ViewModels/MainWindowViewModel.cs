@@ -206,7 +206,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public static AvaloniaList<string> GetAllModels()
         {
-            var modelsPath = @"C:\mpv-upscale-2x_animejanai\vapoursynth64\plugins\models\animejanai"; // TODO
+            var modelsPath = Path.GetFullPath(@"./onnx"); 
             return new AvaloniaList<string>(Directory.GetFiles(modelsPath).Where(filename => Path.GetExtension(filename).Equals(".onnx", StringComparison.CurrentCultureIgnoreCase))
                 .Select(filename => Path.GetFileNameWithoutExtension(filename))
                 .Order().ToList());
@@ -310,7 +310,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
                                 {
                                     AllModels = GetAllModels(),
                                     ModelNumber = currentModelNumber,
-                                    ChainNumber = currentChainNumber,
                                     Name = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_name", "0x0"),
                                     ResizeFactorBeforeUpscale = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_resize_factor_before_upscale", "1"),
                                     ResizeHeightBeforeUpscale = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_resize_height_before_upscale", "0")
@@ -474,7 +473,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
             Models.Add(new UpscaleModel
             {
                 AllModels = MainWindowViewModel.GetAllModels(),
-                ChainNumber = ChainNumber
             });
 
             UpdateModelHeaders();
@@ -515,14 +513,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
             set => this.RaiseAndSetIfChanged(ref _allModels, value);
         }
 
-        private string _chainNumber = string.Empty;
-        [DataMember]
-        public string ChainNumber
-        {
-            get => _chainNumber;
-            set => this.RaiseAndSetIfChanged(ref _chainNumber, value);
-        }
-
         private string _modelNumber = string.Empty;
         [DataMember]
         public string ModelNumber
@@ -553,12 +543,6 @@ namespace AnimeJaNaiConfEditor.ViewModels
         {
             get => _name;
             set => this.RaiseAndSetIfChanged(ref _name, value);
-        }
-
-        public void Test(UpscaleModel model)
-        {
-            Console.WriteLine("Test");
-            //ItemsControl.ItemTemplateProperty
         }
     }
 

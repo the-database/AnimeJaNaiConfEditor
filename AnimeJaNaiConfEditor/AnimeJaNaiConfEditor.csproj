@@ -47,5 +47,17 @@
     <None Update="appstate.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="onnx\2x_AnimeJaNai_HD_V3_Compact.onnx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="onnx\2x_AnimeJaNai_HD_V3_SuperUltraCompact.onnx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="onnx\2x_AnimeJaNai_HD_V3_UltraCompact.onnx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="onnx\2x_AnimeJaNai_SD_V1betaRC9_Compact.onnx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
