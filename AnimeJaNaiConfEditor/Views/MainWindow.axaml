@@ -39,9 +39,9 @@
 
 
 
-  <Grid ColumnDefinitions="250,*" RowDefinitions="*">
+  <Grid ColumnDefinitions="300,*" RowDefinitions="*">
     <StackPanel Grid.Column="0" Background="#33000000">
-      <Button Width="250" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}">
+      <Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}">
         <StackPanel Orientation="Horizontal">
           <materialIcons:MaterialIcon Kind="Gear" VerticalAlignment="Center" />
           <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Global Settings</TextBlock>
@@ -50,38 +50,38 @@
       <TextBlock Margin="10">
         Default Profiles
       </TextBlock>
-      <Button Width="250" FontSize="13" Padding="10">
+      <Button Width="300" FontSize="13" Padding="10">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
             <materialIcons:MaterialIcon Kind="Number1Circle" VerticalAlignment="Center" />
-            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="125">
+            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190">
               Quality 
             </TextBlock>
-            <TextBlock FontFamily="Consolas" Text="(Shift+1)" />
+            <TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+1)" />
           </StackPanel>
           <TextBlock Margin="0,5,10,0" FontSize="10" Foreground="Gray">Minimum Suggested GPU: NVIDIA RTX 4090</TextBlock>
         </StackPanel>
       </Button>
-      <Button Width="250" FontSize="13" Padding="10">
+      <Button Width="300" FontSize="13" Padding="10">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
             <materialIcons:MaterialIcon Kind="Number2Circle" VerticalAlignment="Center" />
-            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="125">
+            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190">
               Balanced
             </TextBlock>
-            <TextBlock FontFamily="Consolas" Text="(Shift+2)" />
+            <TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+2)" />
           </StackPanel>
           <TextBlock Margin="0,5,10,0" FontSize="10" Foreground="Gray">Minimum Suggested GPU: NVIDIA RTX 3080</TextBlock>
         </StackPanel>
       </Button>
-      <Button Width="250" FontSize="13" Padding="10">
+      <Button Width="300" FontSize="13" Padding="10">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
             <materialIcons:MaterialIcon Kind="Number3Circle" VerticalAlignment="Center" />
-            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="125">
+            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190">
               Performance 
             </TextBlock>
-            <TextBlock FontFamily="Consolas" Text="(Shift+3)" />
+            <TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+3)" />
           </StackPanel>
           <TextBlock Margin="0,5,10,0" FontSize="10" Foreground="Gray">Minimum Suggested GPU: NVIDIA RTX 3060</TextBlock>
         </StackPanel>
@@ -92,14 +92,14 @@
       <ItemsControl ItemsSource="{Binding UpscaleSlots}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:UpscaleSlot">
-            <Button Width="250" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowCustomProfile}" CommandParameter="{Binding SlotNumber}">
+            <Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowCustomProfile}" CommandParameter="{Binding SlotNumber}">
               <StackPanel>
                 <StackPanel Orientation="Horizontal">
                   <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
-                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="130">
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195">
                     <Run Text="{Binding ProfileName }"></Run>
                   </TextBlock>
-                  <TextBlock FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=(Ctrl+{0})}" VerticalAlignment="Center"></TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=(Ctrl+{0})}" VerticalAlignment="Center"></TextBlock>
                 </StackPanel>
               </StackPanel>
             </Button>
@@ -216,10 +216,10 @@
                                           </StackPanel>
                                           <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
                                             <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
-                                            <TextBox Margin="0,0,5,0" Text="{Binding ResizeFactorBeforeUpscale}" IsReadOnly="False" />
-                                            <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">x</TextBlock>
+                                            <TextBox Margin="0,0,5,0" Text="{Binding ResizeFactorBeforeUpscale}" IsEnabled="{Binding ResizeFactorBeforeUpscaleIsEnabled}" />
+                                            <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">%</TextBlock>
                                             <TextBlock Foreground="Gray" Width="800" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">
-                                              Resize the video by this factor before running this model. The video width and height are divided by this number, so a value of 1 performs no resize, and a value of 2 cuts the width and height of the video in half. This setting is ignored if Resize Height Before Upscale is specified.
+                                              Resize the video by this factor before running this model. The video width and height are scaled by this percentage, so a value of 100% performs no resize, and a value of 50% cuts the width and height of the video in half. This setting is ignored if Resize Height Before Upscale is specified.
                                             </TextBlock>
                                           </StackPanel>
                                           <StackPanel Orientation="Horizontal" Margin="10,10,0,10">

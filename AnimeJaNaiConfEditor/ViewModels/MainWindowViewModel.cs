@@ -1,6 +1,7 @@
 ﻿using Avalonia.Collections;
 using Avalonia.Controls;
 using DynamicData;
+using DynamicData.Binding;
 using ReactiveUI;
 using Salaros.Configuration;
 using System;
@@ -23,16 +24,32 @@ namespace AnimeJaNaiConfEditor.ViewModels
     {
         public MainWindowViewModel()
         {
-            //this.WhenAnyValue(
+            ReadAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"));
 
-            //    x => x.SelectedTabIndex, x => x.OverwriteExistingVideos).Subscribe(x =>
+            this.WhenAnyValue(
+                x => x.EnableLogging,
+                x => x.TensorRtSelected,
+                x => x.DirectMlSelected,
+                x => x.NcnnSelected).Subscribe(x =>
+                {
+                    WriteAnimeJaNaiConf(Path.GetFullPath(@".\animejanai-test.conf"));
+                });
+
+            //CurrentSlot.WhenAnyValue(x => x.ProfileName, x => x.Chains).Subscribe(x =>
             //{
-            //    Validate();
+            //    WriteAnimeJaNaiConf(Path.GetFullPath(@".\animejanai-test.conf"));
             //});
 
-            ReadAnimeJaNaiConf();
-
-            //AllModels = GetAllModels();
+            // Subscribe to changes in any property of YourModel
+            //this.WhenAnyValue(x => x.UpscaleSlots)
+            //    .Where(model => model != null) // Add a filter if needed
+            //    .Select(model => model.WhenAnyValue(y => y.Property1, y => y.Property2, ...)) // Add nested properties
+            //    .Switch()
+            //    .Subscribe(_ =>
+            //    {
+            //        // Handle the change
+            //        Console.WriteLine("Property changed");
+            //    });
         }
 
         private CancellationTokenSource? _cancellationTokenSource;
@@ -261,15 +278,17 @@ namespace AnimeJaNaiConfEditor.ViewModels
             DirectMlSelected = false;
         }
 
+        public Backend SelectedBackend => TensorRtSelected ? Backend.TensorRT : DirectMlSelected ? Backend.DirectML : NcnnSelected ? Backend.NCNN : Backend.TensorRT;
+
 
         public void Validate()
         {
             Console.WriteLine("OK");
         }
 
-        public void ReadAnimeJaNaiConf()
+        public void ReadAnimeJaNaiConf(string fullPath)
         {
-            var parser = new ConfigParser(Path.GetFullPath(@".\animejanai.conf"));
+            var parser = new ConfigParser(fullPath);
             var slots = new Dictionary<string, UpscaleSlot>();
 
             EnableLogging = ParseBool(parser.GetValue("global", "logging", "no"));
@@ -339,8 +358,8 @@ namespace AnimeJaNaiConfEditor.ViewModels
                                     AllModels = GetAllModels(),
                                     ModelNumber = currentModelNumber,
                                     Name = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_name", "0x0"),
-                                    ResizeFactorBeforeUpscale = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_resize_factor_before_upscale", "1"),
-                                    ResizeHeightBeforeUpscale = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_resize_height_before_upscale", "0")
+                                    ResizeFactorBeforeUpscale = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_resize_factor_before_upscale", 100.ToString()),
+                                    ResizeHeightBeforeUpscale = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_resize_height_before_upscale", 0.ToString())
                                 };
                             }
                         }
@@ -368,40 +387,37 @@ namespace AnimeJaNaiConfEditor.ViewModels
             return value?.ToLower() == "yes";
         }
 
-        public void WriteAnimeJaNaiConf()
+        public void WriteAnimeJaNaiConf(string fullPath)
         {
+            var parser = new ConfigParser();
 
-        }
+            parser.SetValue("global", "backend", SelectedBackend.ToString());
+            parser.SetValue("global", "logging", EnableLogging ? "yes" : "no");
 
-        public void SetupAnimeJaNaiConfSlot1()
-        {
-//            var confPath = Path.GetFullPath(@".\mpv-upscale-2x_animejanai\portable_config\shaders\animejanai_v2.conf");
-//            var backend = DirectMlSelected ? "DirectML" : NcnnSelected ? "NCNN" : "TensorRT";
-//            HashSet<string> filesNeedingEngine = new();
-//            var configText = new StringBuilder($@"[global]
-//logging=yes
-//backend={backend}
-//[slot_1]
-//");
+            foreach (var profile in UpscaleSlots)
+            {
+                var section = $"slot_{profile.SlotNumber}";
+                parser.SetValue(section, "profile_name", profile.ProfileName);
 
-//            for (var i = 0; i < UpscaleSettings.Count; i++)
-//            {
-//                var targetCopyPath = @$".\mpv-upscale-2x_animejanai\vapoursynth64\plugins\models\animejanai\{Path.GetFileName(UpscaleSettings[i].OnnxModelPath)}";
+                foreach (var chain in profile.Chains)
+                {
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_min_resolution", chain.MinResolution);
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_max_resolution", chain.MaxResolution);
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_min_fps", chain.MinFps);
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_max_fps", chain.MaxFps);
 
-//                if (Path.GetFullPath(targetCopyPath) != Path.GetFullPath(UpscaleSettings[i].OnnxModelPath))
-//                {
-//                    File.Copy(UpscaleSettings[i].OnnxModelPath, targetCopyPath, true);
-//                }
+                    foreach (var model in chain.Models)
+                    {
+                        parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_height_before_upscale", model.ResizeHeightBeforeUpscale);
+                        parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_factor_before_upscale", model.ResizeFactorBeforeUpscale);
+                        parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_name", model.Name);
+                    }
 
-//                configText.AppendLine(@$"chain_1_model_{i + 1}_resize_height_before_upscale={UpscaleSettings[i].ResizeHeightBeforeUpscale}
-//chain_1_model_{i + 1}_resize_factor_before_upscale={UpscaleSettings[i].ResizeFactorBeforeUpscale}
-//chain_1_model_{i + 1}_name={Path.GetFileNameWithoutExtension(UpscaleSettings[i].OnnxModelPath)}");
-//            }
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
+                }
+            }
 
-//            var rife = EnableRife ? "yes" : "no";
-//            configText.AppendLine($"chain_1_rife={rife}");
-
-//            File.WriteAllText(confPath, configText.ToString());
+            parser.Save(fullPath);
         }
     }
 
@@ -553,17 +569,23 @@ namespace AnimeJaNaiConfEditor.ViewModels
         [DataMember]
         public string ResizeHeightBeforeUpscale
         {
-            get => _resizeHeightBeforeUpscale; 
-            set => this.RaiseAndSetIfChanged(ref _resizeHeightBeforeUpscale, value);
+            get => _resizeHeightBeforeUpscale;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _resizeHeightBeforeUpscale, value);
+                this.RaisePropertyChanged(nameof(ResizeFactorBeforeUpscaleIsEnabled));
+            }
         }
 
-        private string _resizeFactorBeforeUpscale = 1.0.ToString();
+        private string _resizeFactorBeforeUpscale = 100.ToString();
         [DataMember]
         public string ResizeFactorBeforeUpscale
         {
             get => _resizeFactorBeforeUpscale;
             set => this.RaiseAndSetIfChanged(ref _resizeFactorBeforeUpscale, value);
         }
+
+        public bool ResizeFactorBeforeUpscaleIsEnabled => ResizeHeightBeforeUpscale == 0.ToString();
 
         private string _name = string.Empty;
         [DataMember]
