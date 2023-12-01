@@ -10,6 +10,9 @@
     <Title>AnimeJaNaiConfEditor</Title>
     <PackageIcon>logo.png</PackageIcon>
     <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,6 +41,9 @@
 
 
   <ItemGroup>
+    <None Update="animejanai.conf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="appstate.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
