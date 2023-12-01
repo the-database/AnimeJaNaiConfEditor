@@ -159,9 +159,12 @@
 
                     <TextBlock Margin="0,10,0,5" Text="{Binding ChainNumber, StringFormat=Chain {0}}"  />
                     <Border Classes="border" Margin="0,0,0,20">
-                      <StackPanel>
+                      <Grid>
+                        
+                        
+                        <StackPanel Grid.Column="0">
 
-                        <TextBlock Margin="0,10,0,5" Text="Activation Condition" />
+                        <TextBlock Margin="10,10,0,5" Text="Activation Condition" />
                         <Border Classes="border">
                           <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
@@ -191,7 +194,7 @@
 
                         </Border>
 
-                        <TextBlock Margin="0,10,0,5" Text="Upscale Settings" />
+                        <TextBlock Margin="10,20,0,5" Text="Upscale Settings" />
                         <Border Classes="border">
                           <StackPanel>
 
@@ -201,37 +204,38 @@
                               <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:UpscaleModel">
                                   <StackPanel>
-                                    <TextBlock Text="{Binding ModelNumber, StringFormat=Model {0}}" />
+                                    <TextBlock Margin="10,20,10,0" Text="{Binding ModelNumber, StringFormat=Model {0}}" />
                                     <Border Classes="border">
-                                      <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                          <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
-                                          <TextBox Margin="0,0,5,0" Text="{Binding ResizeHeightBeforeUpscale}" IsReadOnly="False" />
-                                          <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                          <TextBlock Foreground="Gray" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable.</TextBlock>
+                                      <Grid>
+                                        <StackPanel Grid.Column="0">
+                                          <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
+                                            <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
+                                            <TextBox Margin="0,0,5,0" Text="{Binding ResizeHeightBeforeUpscale}" IsReadOnly="False" />
+                                            <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                            <TextBlock Foreground="Gray" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable.</TextBlock>
+                                          </StackPanel>
+                                          <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
+                                            <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
+                                            <TextBox Margin="0,0,5,0" Text="{Binding ResizeFactorBeforeUpscale}" IsReadOnly="False" />
+                                            <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">x</TextBlock>
+                                            <TextBlock Foreground="Gray" Width="800" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">
+                                              Resize the video by this factor before running this model. The video width and height are divided by this number, so a value of 1 performs no resize, and a value of 2 cuts the width and height of the video in half. This setting is ignored if Resize Height Before Upscale is specified.
+                                            </TextBlock>
+                                          </StackPanel>
+                                          <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
+                                            <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
+                                            <ComboBox ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" Width="400"></ComboBox>
+                                            <TextBlock Foreground="Gray" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Name of the model to run.</TextBlock>
+                                          </StackPanel>
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                          <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
-                                          <TextBox Margin="0,0,5,0" Text="{Binding ResizeFactorBeforeUpscale}" IsReadOnly="False" />
-                                          <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">x</TextBlock>
-                                          <TextBlock Foreground="Gray" Width="800" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">
-                                            Resize the video by this factor before running this model. The video width and height are divided by this number, so a value of 1 performs no resize, and a value of 2 cuts the width and height of the video in half. This setting is ignored if Resize Height Before Upscale is specified.
-                                          </TextBlock>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                          <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
-                                          <ComboBox ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" Width="400"></ComboBox>
-                                          <TextBlock Foreground="Gray" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Name of the model to run.</TextBlock>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                          <Button Command="{Binding $parent[ItemsControl].((vm:UpscaleChain)DataContext).DeleteModel}" CommandParameter="{Binding}">
-                                            <StackPanel Orientation="Horizontal">
-                                              <materialIcons:MaterialIcon Kind="MinusCircle" />
-                                              <TextBlock Margin="5,0,0,0">Remove Model</TextBlock>
-                                            </StackPanel>
-                                          </Button>
-                                        </StackPanel>
-                                      </StackPanel>
+
+                                        <Button Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding $parent[ItemsControl].((vm:UpscaleChain)DataContext).DeleteModel}" CommandParameter="{Binding}">
+                                          <StackPanel Orientation="Horizontal">
+                                            <materialIcons:MaterialIcon Kind="MinusCircle" />
+                                            <TextBlock Margin="5,0,0,0" Text="{Binding ModelNumber, StringFormat=Remove Model {0}}" />
+                                          </StackPanel>
+                                        </Button>
+                                      </Grid>
                                     </Border>
                                   </StackPanel>
                                 </DataTemplate>
@@ -253,13 +257,16 @@
 
                         </Border>
 
-                        <Button Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).DeleteChain}" CommandParameter="{Binding}">
+                        
+                      </StackPanel>
+
+                        <Button Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).DeleteChain}" CommandParameter="{Binding}">
                           <StackPanel Orientation="Horizontal">
                             <materialIcons:MaterialIcon Kind="MinusCircle" />
-                            <TextBlock Margin="5,0,0,0">Remove Chain</TextBlock>
+                            <TextBlock Margin="5,0,0,0" Text="{Binding ChainNumber, StringFormat=Remove Chain {0}}" />
                           </StackPanel>
                         </Button>
-                      </StackPanel>
+                      </Grid>
                     </Border>
                   </StackPanel>
 
