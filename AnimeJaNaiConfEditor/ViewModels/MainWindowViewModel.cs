@@ -102,6 +102,34 @@ namespace AnimeJaNaiConfEditor.ViewModels
             get => UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault();
         }
 
+        public void AddChain()
+        {
+            CurrentSlot.Chains.Add(new UpscaleChain());
+            UpdateChainHeaders();
+        }
+
+        public void DeleteChain(UpscaleChain chain)
+        {
+            try
+            {
+                CurrentSlot.Chains.Remove(chain);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+
+            }
+
+            UpdateChainHeaders();
+        }
+
+        public void UpdateChainHeaders()
+        {
+            for (var i = 0; i < CurrentSlot.Chains.Count; i++)
+            {
+                CurrentSlot.Chains[i].ChainNumber = (i + 1).ToString();
+            }
+        }
+
         private string _validationText = string.Empty;
         public string ValidationText
         {

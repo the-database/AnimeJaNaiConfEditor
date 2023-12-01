@@ -252,6 +252,13 @@
                           </StackPanel>
 
                         </Border>
+
+                        <Button Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).DeleteChain}" CommandParameter="{Binding}">
+                          <StackPanel Orientation="Horizontal">
+                            <materialIcons:MaterialIcon Kind="MinusCircle" />
+                            <TextBlock Margin="5,0,0,0">Remove Chain</TextBlock>
+                          </StackPanel>
+                        </Button>
                       </StackPanel>
                     </Border>
                   </StackPanel>
@@ -260,6 +267,13 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
 
+            <Button Margin="10,20,0,20" Command="{Binding AddChain}">
+              <StackPanel Orientation="Horizontal">
+                <materialIcons:MaterialIcon Kind="PlusCircle" />
+                <TextBlock Margin="5,0,0,0">Add Chain</TextBlock>
+              </StackPanel>
+            </Button>
+            
           </StackPanel>
 
         </StackPanel>
