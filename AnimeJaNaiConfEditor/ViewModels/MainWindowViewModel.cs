@@ -141,6 +141,7 @@ chain_2_rife=no";
                 this.RaisePropertyChanged(nameof(DefaultProfile1Active));
                 this.RaisePropertyChanged(nameof(DefaultProfile2Active));
                 this.RaisePropertyChanged(nameof(DefaultProfile3Active));
+                this.RaisePropertyChanged(nameof(CurrentSlot));
             }
         }
 
@@ -152,7 +153,10 @@ chain_2_rife=no";
         [DataMember] public bool ShowCustomProfiles
         {
             get => _showCustomProfiles;
-            set => this.RaiseAndSetIfChanged(ref _showCustomProfiles, value);
+            set {
+                this.RaiseAndSetIfChanged(ref _showCustomProfiles, value);
+                this.RaisePropertyChanged(nameof(CurrentSlot));
+            }
         }
 
         private string _selectedSlotNumber = "1"; // TODO

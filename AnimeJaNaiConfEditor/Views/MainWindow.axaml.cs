@@ -48,8 +48,9 @@ namespace AnimeJaNaiConfEditor.Views
             }
         }
 
-        private async void OpenOnnxFileButtonClick(object? sender, RoutedEventArgs e)
+        private async void ImportFullConfButtonClick(object? sender, RoutedEventArgs e)
         {
+
             // Get top level from the current control. Alternatively, you can use Window reference instead.
             var topLevel = TopLevel.GetTopLevel(this);
 
@@ -58,35 +59,62 @@ namespace AnimeJaNaiConfEditor.Views
 
             var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                Title = "Open ONNX Model File",
+                Title = "Import Full Conf File",
                 AllowMultiple = false,
-                FileTypeFilter = new FilePickerFileType[] { new("ONNX Model File") { Patterns = new[] { "*.onnx" }, MimeTypes = new[] { "*/*" } }, FilePickerFileTypes.All },
-                SuggestedStartLocation = await storageProvider.TryGetFolderFromPathAsync(new Uri(Path.GetFullPath(@".\mpv-upscale-2x_animejanai\vapoursynth64\plugins\models\animejanai"))),
+                FileTypeFilter = new FilePickerFileType[] { new("AnimeJaNai Conf File") { Patterns = new[] { "*.conf" }, MimeTypes = new[] { "*/*" } }, FilePickerFileTypes.All },
             });
 
             if (files.Count >= 1)
             {
-                //// Open reading stream from the first file.
-                //await using var stream = await files[0].OpenReadAsync();
-                //using var streamReader = new StreamReader(stream);
-                //// Reads all the content of file as a text.
-                //var fileContent = await streamReader.ReadToEndAsync();
                 if (DataContext is MainWindowViewModel vm)
                 {
-                    // TODO 
-                    //vm.InputFilePath = files[0].TryGetLocalPath() ?? "";
-                    if (sender is Button button && button.DataContext is UpscaleModel item)
+                    var inPath = files[0].TryGetLocalPath();
+
+                    if (inPath != null)
                     {
-                        // TODO
-                        //int index = vm.UpscaleSettings.IndexOf(item);
-                        // 'index' now contains the index of the clicked item in the ItemsControl
-                        // You can use it as needed
-                        //vm.UpscaleSettings[index].OnnxModelPath = files[0].TryGetLocalPath() ?? string.Empty;
-                        vm.Validate();
-                    }
-                    
+                        await Task.Run(() =>
+                        {
+                            vm.UpscaleSlots = vm.ReadAnimeJaNaiConf(inPath);
+                        });
+                    }                    
                 }
             }
+        }
+
+        private async void ExportFullConfButtonClick(object? sender, RoutedEventArgs e)
+        {
+            // Get top level from the current control. Alternatively, you can use Window reference instead.
+            var topLevel = TopLevel.GetTopLevel(this);
+
+            // Start async operation to open the dialog.
+            var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Export Full Conf File",
+                DefaultExtension = "conf",
+                FileTypeChoices = new FilePickerFileType[]
+                {
+                    new("AnimeJaNai Conf File (*.conf)") { Patterns = new[] { "*.conf" } },
+                },
+            });
+
+            if (file is not null)
+            {
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    //vm.OutputFilePath = file.TryGetLocalPath() ?? "";
+
+                    var outPath = file.TryGetLocalPath();
+
+                    if (outPath != null)
+                    {
+                        vm.WriteAnimeJaNaiConf(outPath);
+                    }
+                }
+            }
+        }
+
+        private void Button_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
         }
     }
 }

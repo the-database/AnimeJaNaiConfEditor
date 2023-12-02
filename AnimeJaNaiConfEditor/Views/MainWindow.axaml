@@ -152,13 +152,13 @@
 						</StackPanel>
 					</StackPanel>
 					<StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
-						<Button>
+						<Button Click="ImportFullConfButtonClick">
 							<StackPanel Orientation="Horizontal">
 								<materialIcons:MaterialIcon Kind="Import" VerticalAlignment="Center" />
 								<TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Import Full Config</TextBlock>
 							</StackPanel>
 						</Button>
-						<Button>
+						<Button Click="ExportFullConfButtonClick">
 							<StackPanel Orientation="Horizontal">
 								<materialIcons:MaterialIcon Kind="Export" VerticalAlignment="Center" />
 								<TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Export Full Config</TextBlock>
@@ -173,7 +173,7 @@
 							<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Profile Name</TextBlock>
 							<TextBox Width="500" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="True" IsEnabled="False" />
 						</StackPanel>
-
+            
 						<ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:DataType="vm:UpscaleChain">
@@ -234,7 +234,7 @@
 																							<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
 																							<TextBox Margin="0,0,5,0" Text="{Binding ResizeHeightBeforeUpscale}" IsReadOnly="True" IsEnabled="False" />
 																							<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-																							<TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable.</TextBlock>
+																							<TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable. Downscaling the video improves performance; for most sources downscaling reduces quality but some blurry sources may see improved sharpness with some downscaling.</TextBlock>
 																						</StackPanel>
 																						<StackPanel Orientation="Horizontal" Margin="10,10,0,10">
 																							<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
@@ -287,7 +287,7 @@
 								<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Profile Name</TextBlock>
 								<TextBox Width="500" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="False" />
 							</StackPanel>
-
+              <TextBlock Text="{Binding CurrentSlot.Chains.Count}" />
 							<ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
 								<ItemsControl.ItemTemplate>
 									<DataTemplate x:DataType="vm:UpscaleChain">
@@ -318,12 +318,11 @@
 
 																<StackPanel Orientation="Horizontal" Margin="10,10,0,10">
 																	<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">FPS Range</TextBlock>
-																	<TextBox Margin="0,0,5,0" Text="{Binding MinFps}" IsReadOnly="False" />
+                                  <ui:NumberBox Margin="0,0,5,0" Value="{Binding MinFps}" Minimum="0" Maximum="999" Width="80" />
 																	<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
 
-
 																	<TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
-																	<TextBox Margin="0,0,5,0" Text="{Binding MaxFps}" IsReadOnly="False" />
+                                  <ui:NumberBox Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
 																	<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
 																	<TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale.</TextBlock>
 																</StackPanel>
@@ -347,13 +346,13 @@
 																						<StackPanel Grid.Column="0">
 																							<StackPanel Orientation="Horizontal" Margin="10,10,0,10">
 																								<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
-																								<TextBox Margin="0,0,5,0" Text="{Binding ResizeHeightBeforeUpscale}" IsReadOnly="False" />
+                                                <ui:NumberBox Margin="0,0,5,0" Maximum="1080" Minimum="0" Value="{Binding ResizeHeightBeforeUpscale}" />
 																								<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-																								<TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable.</TextBlock>
+                                                <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable. Downscaling the video improves performance; for most sources downscaling reduces quality but some blurry sources may see improved sharpness with the right amount of downscaling.</TextBlock>
 																							</StackPanel>
 																							<StackPanel Orientation="Horizontal" Margin="10,10,0,10">
 																								<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
-																								<TextBox Margin="0,0,5,0" Text="{Binding ResizeFactorBeforeUpscale}" IsEnabled="{Binding ResizeFactorBeforeUpscaleIsEnabled}" />
+                                                <ui:NumberBox Margin="0,0,5,0" Maximum="100" Minimum="0" Value="{Binding ResizeFactorBeforeUpscale}" IsEnabled="{Binding ResizeFactorBeforeUpscaleIsEnabled}" />
 																								<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">%</TextBlock>
 																								<TextBlock Opacity=".5" Width="800" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">
 																									Resize the video by this factor before running this model. The video width and height are scaled by this percentage, so a value of 100% performs no resize, and a value of 50% cuts the width and height of the video in half. This setting is ignored if Resize Height Before Upscale is specified.
@@ -411,12 +410,15 @@
 								</ItemsControl.ItemTemplate>
 							</ItemsControl>
 
-							<Button Margin="10,20,0,20" Command="{Binding AddChain}">
-								<StackPanel Orientation="Horizontal">
-									<materialIcons:MaterialIcon Kind="PlusCircle" />
-									<TextBlock Margin="5,0,0,0">Add Chain</TextBlock>
-								</StackPanel>
-							</Button>
+              <StackPanel Orientation="Horizontal">
+                <Button Margin="10,20,0,20" Command="{Binding AddChain}">
+                  <StackPanel Orientation="Horizontal">
+                    <materialIcons:MaterialIcon Kind="PlusCircle" />
+                    <TextBlock Margin="5,0,0,0">Add Chain</TextBlock>
+                  </StackPanel>
+                </Button>
+                <TextBlock Width="900" TextWrapping="WrapWithOverflow" FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">A chain is a a set of upscale settings which can be activated based on conditions such as the video resolution and fps. Videos with higher resolution and fps are more demanding to upscale, so setting up multiple chains allows you to select the most suitable model for each video type based on the capabilities of your hardware.</TextBlock>
+              </StackPanel>
 
 						</StackPanel>
 
