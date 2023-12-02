@@ -52,7 +52,7 @@
 			<TextBlock Margin="10">
 				Default Profiles (Read-only)
 			</TextBlock>
-			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="1" Classes.active="{Binding DefaultProfile1Active}">
+			<Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="1" Classes.active="{Binding DefaultProfile1Active}" ClickMode="Press">
 				<StackPanel>
 					<StackPanel Orientation="Horizontal">
 						<materialIcons:MaterialIcon Kind="Number1Circle" VerticalAlignment="Center" />
