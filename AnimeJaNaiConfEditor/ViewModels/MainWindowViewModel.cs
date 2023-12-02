@@ -37,6 +37,24 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 });
         }
 
+        private string[] _commonResolutions = [
+            "0x0",
+            "640x360",
+            "640x480",
+            "720x480",
+            "768x576",
+            "960x540",
+            "1024x576",
+            "1280x720",
+            "1440x1080",
+            "1920x1080"];
+
+        public string[] CommonResolutions
+        {
+            get => _commonResolutions;
+            set => this.RaiseAndSetIfChanged(ref _commonResolutions, value);
+        }
+
         private static readonly string DEFAULT_PROFILES_CONF = @"[slot_1]
 profile_name=Quality
 chain_1_min_resolution=0x0

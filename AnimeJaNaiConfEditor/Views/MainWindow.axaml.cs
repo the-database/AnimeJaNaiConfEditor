@@ -23,7 +23,7 @@ namespace AnimeJaNaiConfEditor.Views
     {
         private bool _autoScrollConsole = true;
         private bool _userWantsToQuit = false;
-
+        private bool _focusedRecently = false;
         public MainWindow()
         {
             AvaloniaXamlLoader.Load(this);
