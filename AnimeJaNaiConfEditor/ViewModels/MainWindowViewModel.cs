@@ -626,6 +626,28 @@ chain_2_rife=no";
                 WriteAnimeJaNaiConf(Path.Join(BackupPath, $"autobackup_{DateTime.Now:yyyyMMdd-HHmmss}.conf"));
             });
         }
+
+#pragma warning disable CA1822 // Mark members as static
+        public async void LaunchBenchmark()
+#pragma warning restore CA1822 // Mark members as static
+        {
+            await Task.Run(async () =>
+            {
+                using var process = new Process();
+
+                process.StartInfo.FileName = "cmd.exe";
+                process.StartInfo.Arguments = @"/C .\animejanai_benchmark_all.bat";
+
+                process.StartInfo.RedirectStandardOutput = false;
+                process.StartInfo.RedirectStandardError = false;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = false;
+                process.StartInfo.WorkingDirectory = Path.GetFullPath(".");
+
+                process.Start();
+                await process.WaitForExitAsync();
+            });
+        }
     }
 
     [DataContract]

@@ -119,6 +119,20 @@
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
+      <TextBlock Margin="10">
+        Tools
+      </TextBlock>
+      <Button Width="300" FontSize="13" Padding="10" Command="{Binding LaunchBenchmark}" HorizontalContentAlignment="Left">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <materialIcons:MaterialIcon Kind="Finance" VerticalAlignment="Center" />
+            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190">
+              Run Benchmarks
+            </TextBlock>
+          </StackPanel>
+          <TextBlock Width="280" TextWrapping="WrapWithOverflow" Margin="0,5,10,0" FontSize="10" Opacity=".5">Launch the benchmark tool to measure the performance of your hardware for several combinations of upscaling settings. This may take several minutes.</TextBlock>
+        </StackPanel>
+      </Button>
     </StackPanel>
 
     <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" >
