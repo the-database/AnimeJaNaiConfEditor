@@ -201,6 +201,19 @@ chain_2_rife=no";
                 ShowDefaultProfiles ? DefaultUpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : null;
         }
 
+        private UpscaleSlot? _selectedProfileToClone;
+        public UpscaleSlot? SelectedProfileToClone
+        {
+            get => _selectedProfileToClone;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _selectedProfileToClone, value);
+                this.RaisePropertyChanged(nameof(CanCloneProfile));
+            }
+        }
+
+        public bool CanCloneProfile => true; //SelectedProfileToClone != null;
+
         public void AddChain()
         {
             CurrentSlot.Chains.Add(new UpscaleChain(true) { Vm = this });
@@ -245,8 +258,13 @@ chain_2_rife=no";
         public AvaloniaList<UpscaleSlot> DefaultUpscaleSlots
         {
             get => _defaultUpscaleSlots;
-            set => this.RaiseAndSetIfChanged(ref _defaultUpscaleSlots, value);
+            set {
+                this.RaiseAndSetIfChanged(ref _defaultUpscaleSlots, value);
+                this.RaisePropertyChanged(nameof(AllSlots));
+            }
         }
+
+        public AvaloniaList<UpscaleSlot> AllSlots => new(DefaultUpscaleSlots.Concat(AnimeJaNaiConf?.UpscaleSlots?.Where(x => x.ShowSlot && !x.ActiveSlot)));
 
         private bool _showAdvancedSettings = false;
         [DataMember]
@@ -543,11 +561,17 @@ chain_2_rife=no";
 
         public void WriteAnimeJaNaiCurrentProfileConf(string fullPath)
         {
+            var parser = ParsedAnimeJaNaiProfileConf(CurrentSlot);
+            parser.Save(fullPath);
+        }
+
+        public ConfigParser ParsedAnimeJaNaiProfileConf(UpscaleSlot slot)
+        {
             var parser = new ConfigParser();
             var section = "slot";
 
-            parser.SetValue(section, "profile_name", CurrentSlot.ProfileName);
-            foreach (var chain in CurrentSlot.Chains)
+            parser.SetValue(section, "profile_name", slot.ProfileName);
+            foreach (var chain in slot.Chains)
             {
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_min_resolution", chain.MinResolution);
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_max_resolution", chain.MaxResolution);
@@ -564,7 +588,7 @@ chain_2_rife=no";
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
             }
 
-            parser.Save(fullPath);
+            return parser;
         }
 
         public void CheckAndDoBackup()
@@ -592,7 +616,7 @@ chain_2_rife=no";
                 if (files.Count > 0)
                 {
                     var backupConf = ReadAnimeJaNaiConf(files.First());
-                    if ( currentConfStr == ParsedAnimeJaNaiConf(backupConf)?.ToString())
+                    if (currentConfStr == ParsedAnimeJaNaiConf(backupConf)?.ToString())
                     {
                         // Backup already exists - no need to create another backup
                         return;
@@ -676,7 +700,11 @@ chain_2_rife=no";
         public AvaloniaList<UpscaleSlot> UpscaleSlots
         {
             get => _upscaleSlots;
-            set => this.RaiseAndSetIfChanged(ref _upscaleSlots, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _upscaleSlots, value);
+                Vm?.RaisePropertyChanged("AllSlots");
+            }
         }
 
         public void SetTensorRtSelected()
@@ -726,6 +754,7 @@ chain_2_rife=no";
                 sub = Vm.WhenAnyValue(x => x.SelectedSlotNumber, x => x.ShowCustomProfiles).Subscribe(x =>
                 {
                     this.RaisePropertyChanged(nameof(ActiveSlot));
+                    Vm?.RaisePropertyChanged("AllSlots");
                 });
             });
         }
