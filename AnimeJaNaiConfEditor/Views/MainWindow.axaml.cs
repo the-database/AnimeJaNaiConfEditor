@@ -9,6 +9,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.ReactiveUI;
+using FluentAvalonia.UI.Controls;
 using Material.Icons.Avalonia;
 using ReactiveUI;
 using System;
@@ -36,7 +37,7 @@ namespace AnimeJaNaiConfEditor.Views
         {
             if (DataContext is MainWindowViewModel vm)
             {
-                
+
             }
         }
 
@@ -44,7 +45,7 @@ namespace AnimeJaNaiConfEditor.Views
         {
             if (DataContext is MainWindowViewModel vm)
             {
-                
+
             }
         }
 
@@ -73,11 +74,43 @@ namespace AnimeJaNaiConfEditor.Views
 
                     if (inPath != null)
                     {
-                        await Task.Run(() =>
+                        var td = new TaskDialog
                         {
-                            vm.UpscaleSlots = vm.ReadAnimeJaNaiConf(inPath);
-                        });
-                    }                    
+                            Title = "Confirm Full Conf Import",
+                            ShowProgressBar = false,
+                            Content = "The following full conf file will be imported. All configuration settings for ALL SLOTS will be overwritten.\n\n" +
+    inPath,
+                            Buttons =
+            {
+                TaskDialogButton.OKButton,
+                TaskDialogButton.CancelButton
+            }
+                        };
+
+
+                        td.Closing += async (s, e) =>
+                        {
+                            if ((TaskDialogStandardResult)e.Result == TaskDialogStandardResult.OK)
+                            {
+                                var deferral = e.GetDeferral();
+
+                                td.SetProgressBarState(0, TaskDialogProgressState.Indeterminate);
+                                td.ShowProgressBar = true;
+                                int value = 0;
+
+
+                                await Task.Run(() =>
+                                {
+                                    vm.UpscaleSlots = vm.ReadAnimeJaNaiConf(inPath);
+                                });
+
+                                deferral.Complete();
+                            }
+                        };
+
+                        td.XamlRoot = VisualRoot as Visual;
+                        _ = await td.ShowAsync();
+                    }
                 }
             }
         }
@@ -106,10 +139,42 @@ namespace AnimeJaNaiConfEditor.Views
 
                     if (inPath != null)
                     {
-                        await Task.Run(() =>
+                        var td = new TaskDialog
                         {
-                            vm.ReadAnimeJaNaiConfToCurrentSlot(inPath);
-                        });
+                            Title = "Confirm Profile Conf Import",
+                            ShowProgressBar = false,
+                            Content = $"The following profile conf file will be imported to the current slot. All configuration settings for the current slot {vm.CurrentSlot.ProfileName} will be overwritten.\n\n" +
+inPath,
+                            Buttons =
+            {
+                TaskDialogButton.OKButton,
+                TaskDialogButton.CancelButton
+            }
+                        };
+
+
+                        td.Closing += async (s, e) =>
+                        {
+                            if ((TaskDialogStandardResult)e.Result == TaskDialogStandardResult.OK)
+                            {
+                                var deferral = e.GetDeferral();
+
+                                td.SetProgressBarState(0, TaskDialogProgressState.Indeterminate);
+                                td.ShowProgressBar = true;
+                                int value = 0;
+
+
+                                await Task.Run(() =>
+                                {
+                                    vm.ReadAnimeJaNaiConfToCurrentSlot(inPath);
+                                });
+
+                                deferral.Complete();
+                            }
+                        };
+
+                        td.XamlRoot = VisualRoot as Visual;
+                        _ = await td.ShowAsync();
                     }
                 }
             }
@@ -177,10 +242,6 @@ namespace AnimeJaNaiConfEditor.Views
                     }
                 }
             }
-        }
-
-        private void Button_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
         }
     }
 }
