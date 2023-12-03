@@ -59,9 +59,10 @@ namespace AnimeJaNaiConfEditor.Views
 
             var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                Title = "Import Full Conf File",
+                Title = "Import Profile Conf File",
                 AllowMultiple = false,
                 FileTypeFilter = new FilePickerFileType[] { new("AnimeJaNai Conf File") { Patterns = new[] { "*.conf" }, MimeTypes = new[] { "*/*" } }, FilePickerFileTypes.All },
+
             });
 
             if (files.Count >= 1)
@@ -77,6 +78,39 @@ namespace AnimeJaNaiConfEditor.Views
                             vm.UpscaleSlots = vm.ReadAnimeJaNaiConf(inPath);
                         });
                     }                    
+                }
+            }
+        }
+
+        private async void ImportCurrentProfileConfButtonClick(object? sender, RoutedEventArgs e)
+        {
+
+            // Get top level from the current control. Alternatively, you can use Window reference instead.
+            var topLevel = TopLevel.GetTopLevel(this);
+
+            // Start async operation to open the dialog.
+            var storageProvider = topLevel.StorageProvider;
+
+            var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Import Full Conf File",
+                AllowMultiple = false,
+                FileTypeFilter = new FilePickerFileType[] { new("AnimeJaNai Profile Conf File") { Patterns = new[] { "*.pconf" }, MimeTypes = new[] { "*/*" } }, FilePickerFileTypes.All },
+            });
+
+            if (files.Count >= 1)
+            {
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    var inPath = files[0].TryGetLocalPath();
+
+                    if (inPath != null)
+                    {
+                        await Task.Run(() =>
+                        {
+                            vm.ReadAnimeJaNaiConfToCurrentSlot(inPath);
+                        });
+                    }
                 }
             }
         }
@@ -108,6 +142,38 @@ namespace AnimeJaNaiConfEditor.Views
                     if (outPath != null)
                     {
                         vm.WriteAnimeJaNaiConf(outPath);
+                    }
+                }
+            }
+        }
+
+        private async void ExportCurrentProfileConfButtonClick(object? sender, RoutedEventArgs e)
+        {
+            // Get top level from the current control. Alternatively, you can use Window reference instead.
+            var topLevel = TopLevel.GetTopLevel(this);
+
+            // Start async operation to open the dialog.
+            var file = await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Export Current Profile Conf File",
+                DefaultExtension = "conf",
+                FileTypeChoices = new FilePickerFileType[]
+                {
+                    new("AnimeJaNai Profile Conf File (*.pconf)") { Patterns = new[] { "*.pconf" } },
+                },
+            });
+
+            if (file is not null)
+            {
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    //vm.OutputFilePath = file.TryGetLocalPath() ?? "";
+
+                    var outPath = file.TryGetLocalPath();
+
+                    if (outPath != null)
+                    {
+                        vm.WriteAnimeJaNaiCurrentProfileConf(outPath);
                     }
                 }
             }

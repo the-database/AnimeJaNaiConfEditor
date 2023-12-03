@@ -480,6 +480,86 @@ chain_2_rife=no";
             return new AvaloniaList<UpscaleSlot>(slots.Values);
         }
 
+        public void ReadAnimeJaNaiConfToCurrentSlot(string fullPath)
+        {
+            ReadAnimeJaNaiConfToCurrentSlot(new ConfigParser(fullPath));
+        }
+
+        public void ReadAnimeJaNaiConfToCurrentSlot(ConfigParser parser)
+        {
+            var sectionKey = "slot";
+
+            foreach (var section in parser.Sections)
+            {
+                if (section.SectionName != sectionKey)
+                {
+                    return; // Invalid
+                }
+
+                var currentSlotNumber = Regex.Match(section.SectionName, @"slot_(\d+)").Groups[1].Value;
+
+                var chains = new Dictionary<string, UpscaleChain>();
+                var models = new Dictionary<string, Dictionary<string, UpscaleModel>>();
+
+                foreach (var key in section.Keys)
+                {
+                    var matchCurrentChainNumber = Regex.Match(key.Name, @"chain_(\d+)_");
+
+                    if (matchCurrentChainNumber.Success)
+                    {
+                        var currentChainNumber = matchCurrentChainNumber.Groups[1].Value;
+
+                        chains[currentChainNumber] = new UpscaleChain
+                        {
+                            Vm = this,
+                            ChainNumber = currentChainNumber,
+                            MinResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_resolution"),
+                            MaxResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_resolution"),
+                            MinFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_fps"),
+                            MaxFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_fps"),
+                            EnableRife = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife"))
+                        };
+
+                        var matchCurrentModelNumber = Regex.Match(key.Name, @"_model_(\d+)_");
+
+                        if (matchCurrentModelNumber.Success)
+                        {
+                            var currentModelNumber = matchCurrentModelNumber.Groups[1].Value;
+
+                            if (!models.ContainsKey(currentChainNumber))
+                            {
+                                models[currentChainNumber] = [];
+                            }
+
+                            if (models[currentChainNumber].ContainsKey(currentModelNumber))
+                            {
+                                continue;
+                            }
+
+                            models[currentChainNumber][currentModelNumber] = new UpscaleModel
+                            {
+                                Vm = this,
+                                AllModels = GetAllModels(),
+                                ModelNumber = currentModelNumber,
+                                Name = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_name", "0x0"),
+                                ResizeFactorBeforeUpscale = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_resize_factor_before_upscale", 100.ToString()),
+                                ResizeHeightBeforeUpscale = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_model_{currentModelNumber}_resize_height_before_upscale", 0.ToString())
+                            };
+                        }
+                    }
+                }
+
+                foreach (var currentChainNumber in models.Keys)
+                {
+                    chains[currentChainNumber].Models = new AvaloniaList<UpscaleModel>(models[currentChainNumber].Values.ToList());
+                }
+
+                CurrentSlot.Vm = this;
+                CurrentSlot.ProfileName = parser.GetValue(sectionKey, "profile_name", "New Profile");
+                CurrentSlot.Chains = new AvaloniaList<UpscaleChain>(chains.Values.ToList());
+            }
+        }
+
         static bool ParseBool(string value)
         {
             return value?.ToLower() == "yes";
@@ -518,6 +598,32 @@ chain_2_rife=no";
 
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
                 }
+            }
+
+            parser.Save(fullPath);
+        }
+
+        public void WriteAnimeJaNaiCurrentProfileConf(string fullPath)
+        {
+            var parser = new ConfigParser();
+            var section = "slot";
+
+            parser.SetValue(section, "profile_name", CurrentSlot.ProfileName);
+            foreach (var chain in CurrentSlot.Chains)
+            {
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_min_resolution", chain.MinResolution);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_max_resolution", chain.MaxResolution);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_min_fps", chain.MinFps);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_max_fps", chain.MaxFps);
+
+                foreach (var model in chain.Models)
+                {
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_height_before_upscale", model.ResizeHeightBeforeUpscale);
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_factor_before_upscale", model.ResizeFactorBeforeUpscale);
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_name", model.Name);
+                }
+
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
             }
 
             parser.Save(fullPath);
