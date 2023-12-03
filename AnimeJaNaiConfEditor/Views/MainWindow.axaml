@@ -98,7 +98,7 @@
 			<TextBlock Margin="10">
 				Custom Profiles
 			</TextBlock>
-			<ItemsControl ItemsSource="{Binding UpscaleSlots}">
+			<ItemsControl ItemsSource="{Binding AnimeJaNaiConf.UpscaleSlots}">
 				<ItemsControl.ItemTemplate>
 					<DataTemplate x:DataType="vm:UpscaleSlot">
 						<Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}" 
@@ -133,7 +133,7 @@
 				<Grid IsVisible="{Binding ShowGlobalSettings}">
 					<StackPanel Grid.Column="0">
 						<StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-							<CheckBox  IsChecked="{Binding EnableLogging}" Content="Enable Logging" />
+							<CheckBox  IsChecked="{Binding AnimeJaNaiConf.EnableLogging}" Content="Enable Logging" />
 							<TextBlock Opacity=".5" Width="560" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">
 								Enable logging to view which models are being used and which resolutions they are scaling from.
 								The log file is created at <Run FontFamily="Consolas">animejanai.log</Run> in the same directory as this config editor.
@@ -142,9 +142,9 @@
 
 						<StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,10,0,10">
 							<TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Upscaling Backend</TextBlock>
-							<ToggleButton IsChecked="{Binding TensorRtSelected}" Content="TensorRT" Command="{Binding SetTensorRtSelected}" />
-							<ToggleButton IsChecked="{Binding DirectMlSelected}" Content="DirectML" Command="{Binding SetDirectMlSelected}" />
-							<ToggleButton IsChecked="{Binding NcnnSelected}" Content="NCNN" Command="{Binding SetNcnnSelected}" />
+							<ToggleButton IsChecked="{Binding AnimeJaNaiConf.TensorRtSelected}" Content="TensorRT" Command="{Binding AnimeJaNaiConf.SetTensorRtSelected}" />
+							<ToggleButton IsChecked="{Binding AnimeJaNaiConf.DirectMlSelected}" Content="DirectML" Command="{Binding AnimeJaNaiConf.SetDirectMlSelected}" />
+							<ToggleButton IsChecked="{Binding AnimeJaNaiConf.NcnnSelected}" Content="NCNN" Command="{Binding AnimeJaNaiConf.SetNcnnSelected}" />
 							<TextBlock Opacity=".5" Width="900" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="40,0,0,0" xml:space="preserve"><Bold>TensorRT</Bold>: Fastest option but NVIDIA only. Supports fp16 and fp32 ONNX models. fp16 models are recommended for faster performance and reduced VRAM usage without any loss in quality. The initial engine generation may require several minutes but only needs to be done once.
 <Bold>DirectML</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but slower than TensorRT. Supports fp32 ONNX models only.
 <Bold>NCNN</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but typically slower than DirectML. Supports fp32 ONNX models only.

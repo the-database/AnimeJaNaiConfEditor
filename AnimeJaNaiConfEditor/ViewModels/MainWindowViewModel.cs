@@ -24,17 +24,10 @@ namespace AnimeJaNaiConfEditor.ViewModels
     {
         public MainWindowViewModel()
         {
-            DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(DEFAULT_PROFILES_CONF));
-            UpscaleSlots = ReadAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"));
+            DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(DEFAULT_PROFILES_CONF)).UpscaleSlots;
+            AnimeJaNaiConf = ReadAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"), true);
 
-            this.WhenAnyValue(
-                x => x.EnableLogging,
-                x => x.TensorRtSelected,
-                x => x.DirectMlSelected,
-                x => x.NcnnSelected).Subscribe(x =>
-                {
-                    WriteAnimeJaNaiConf();
-                });
+            CheckAndDoBackup();
         }
 
         private string[] _commonResolutions = [
@@ -118,10 +111,8 @@ chain_2_model_1_resize_factor_before_upscale=100
 chain_2_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
 chain_2_rife=no";
 
-        private CancellationTokenSource? _cancellationTokenSource;
-        private Process? _runningProcess = null;
-
-        public string AppVersion => Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+        private static readonly string BACKUP_PATH_RELATIVE = "./backups";
+        public string BackupPath => Path.GetFullPath(BACKUP_PATH_RELATIVE);
 
         private bool _showGlobalSettings = false; // TODO
         [DataMember]
@@ -197,15 +188,22 @@ chain_2_rife=no";
             SelectedSlotNumber = slotNumber;
         }
 
+        private AnimeJaNaiConf _animeJaNaiConf;
+        public AnimeJaNaiConf AnimeJaNaiConf
+        {
+            get => _animeJaNaiConf;
+            set => this.RaiseAndSetIfChanged(ref _animeJaNaiConf, value);
+        }
+
         public UpscaleSlot CurrentSlot
         {
-            get => ShowCustomProfiles ? UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : 
+            get => ShowCustomProfiles ? AnimeJaNaiConf.UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : 
                 ShowDefaultProfiles ? DefaultUpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : null;
         }
 
         public void AddChain()
         {
-            CurrentSlot.Chains.Add(new UpscaleChain { Vm = this });
+            CurrentSlot.Chains.Add(new UpscaleChain(true) { Vm = this });
             UpdateChainHeaders();
         }
 
@@ -242,47 +240,6 @@ chain_2_rife=no";
             }
         }
 
-        private bool _enableLogging = false;
-        [DataMember]
-        public bool EnableLogging
-        {
-            get => _enableLogging;
-            set => this.RaiseAndSetIfChanged(ref _enableLogging, value);
-        }
-
-        private bool _tensorRtSelected = true;
-        [DataMember]
-        public bool TensorRtSelected
-        {
-            get => _tensorRtSelected;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _tensorRtSelected, value);
-            }
-        }
-
-        private bool _directMlSelected = false;
-        [DataMember]
-        public bool DirectMlSelected
-        {
-            get => _directMlSelected;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _directMlSelected, value);
-            }
-        }
-
-        private bool _ncnnSelected = false;
-        [DataMember]
-        public bool NcnnSelected
-        {
-            get => _ncnnSelected;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _ncnnSelected, value);
-            }
-        }
-
         private AvaloniaList<UpscaleSlot> _defaultUpscaleSlots = [];
         [DataMember]
         public AvaloniaList<UpscaleSlot> DefaultUpscaleSlots
@@ -290,16 +247,6 @@ chain_2_rife=no";
             get => _defaultUpscaleSlots;
             set => this.RaiseAndSetIfChanged(ref _defaultUpscaleSlots, value);
         }
-
-        private AvaloniaList<UpscaleSlot> _upscaleSlots = [];
-        [DataMember]
-        public AvaloniaList<UpscaleSlot> UpscaleSlots
-        {
-            get => _upscaleSlots;
-            set => this.RaiseAndSetIfChanged(ref _upscaleSlots, value);
-        }
-
-
 
         private bool _showAdvancedSettings = false;
         [DataMember]
@@ -349,58 +296,36 @@ chain_2_rife=no";
                 .Order().ToList());
         }
 
-        public void SetTensorRtSelected()
-        {
-            TensorRtSelected = true;
-            DirectMlSelected = false;
-            NcnnSelected = false;
-        }
-
-        public void SetDirectMlSelected()
-        {
-            DirectMlSelected = true;
-            TensorRtSelected = false;
-            NcnnSelected = false;
-        }
-
-        public void SetNcnnSelected()
-        {
-            NcnnSelected = true;
-            TensorRtSelected = false;
-            DirectMlSelected = false;
-        }
-
-        public Backend SelectedBackend => TensorRtSelected ? Backend.TensorRT : DirectMlSelected ? Backend.DirectML : NcnnSelected ? Backend.NCNN : Backend.TensorRT;
-
 
         public void Validate()
         {
             Console.WriteLine("OK");
         }
 
-        public AvaloniaList<UpscaleSlot> ReadAnimeJaNaiConf(string fullPath)
+        public AnimeJaNaiConf ReadAnimeJaNaiConf(string fullPath, bool autoSave = false)
         {
-            return ReadAnimeJaNaiConf(new ConfigParser(fullPath));
+            return ReadAnimeJaNaiConf(new ConfigParser(fullPath), autoSave);
         }
 
-        public AvaloniaList<UpscaleSlot> ReadAnimeJaNaiConf(ConfigParser parser)
+        public AnimeJaNaiConf ReadAnimeJaNaiConf(ConfigParser parser, bool autoSave = false)
         {
+            var animeJaNaiConf = new AnimeJaNaiConf(autoSave) { Vm = this };
             var slots = new Dictionary<string, UpscaleSlot>();
 
-            EnableLogging = ParseBool(parser.GetValue("global", "logging", "no"));
+            animeJaNaiConf.EnableLogging = ParseBool(parser.GetValue("global", "logging", "no"));
             if (Enum.TryParse(parser.GetValue("global", "backend", "TensorRT"), out Backend backend))
             {
                 switch (backend)
                 {
                     case Backend.DirectML:
-                        SetDirectMlSelected();
+                        animeJaNaiConf.SetDirectMlSelected();
                         break;
                     case Backend.NCNN:
-                        SetNcnnSelected();
+                        animeJaNaiConf.SetNcnnSelected();
                         break;
                     case Backend.TensorRT:
                     default:
-                        SetTensorRtSelected();
+                        animeJaNaiConf.SetTensorRtSelected();
                         break;
                 }
             }
@@ -422,7 +347,7 @@ chain_2_rife=no";
                         {
                             var currentChainNumber = matchCurrentChainNumber.Groups[1].Value;
 
-                            chains[currentChainNumber] = new UpscaleChain
+                            chains[currentChainNumber] = new UpscaleChain(autoSave)
                             {
                                 Vm = this,
                                 ChainNumber = currentChainNumber,
@@ -449,7 +374,7 @@ chain_2_rife=no";
                                     continue;
                                 }
 
-                                models[currentChainNumber][currentModelNumber] = new UpscaleModel
+                                models[currentChainNumber][currentModelNumber] = new UpscaleModel(autoSave)
                                 {
                                     Vm = this,
                                     AllModels = GetAllModels(),
@@ -467,7 +392,7 @@ chain_2_rife=no";
                         chains[currentChainNumber].Models = new AvaloniaList<UpscaleModel>(models[currentChainNumber].Values.ToList());
                     }
 
-                    slots[currentSlotNumber] = new UpscaleSlot
+                    slots[currentSlotNumber] = new UpscaleSlot(autoSave)
                     {
                         Vm = this,
                         SlotNumber = currentSlotNumber,
@@ -477,15 +402,17 @@ chain_2_rife=no";
                 }
             }
 
-            return new AvaloniaList<UpscaleSlot>(slots.Values);
+            animeJaNaiConf.UpscaleSlots = new AvaloniaList<UpscaleSlot>(slots.Values);
+
+            return animeJaNaiConf;
         }
 
-        public void ReadAnimeJaNaiConfToCurrentSlot(string fullPath)
+        public void ReadAnimeJaNaiConfToCurrentSlot(string fullPath, bool autoSave = false)
         {
-            ReadAnimeJaNaiConfToCurrentSlot(new ConfigParser(fullPath));
+            ReadAnimeJaNaiConfToCurrentSlot(new ConfigParser(fullPath), autoSave);
         }
 
-        public void ReadAnimeJaNaiConfToCurrentSlot(ConfigParser parser)
+        public void ReadAnimeJaNaiConfToCurrentSlot(ConfigParser parser, bool autoSave = false)
         {
             var sectionKey = "slot";
 
@@ -509,7 +436,7 @@ chain_2_rife=no";
                     {
                         var currentChainNumber = matchCurrentChainNumber.Groups[1].Value;
 
-                        chains[currentChainNumber] = new UpscaleChain
+                        chains[currentChainNumber] = new UpscaleChain(autoSave)
                         {
                             Vm = this,
                             ChainNumber = currentChainNumber,
@@ -536,7 +463,7 @@ chain_2_rife=no";
                                 continue;
                             }
 
-                            models[currentChainNumber][currentModelNumber] = new UpscaleModel
+                            models[currentChainNumber][currentModelNumber] = new UpscaleModel(true)
                             {
                                 Vm = this,
                                 AllModels = GetAllModels(),
@@ -567,17 +494,28 @@ chain_2_rife=no";
 
         public void WriteAnimeJaNaiConf()
         {
-            WriteAnimeJaNaiConf(Path.GetFullPath(@".\animejanai-test.conf"));
+            WriteAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"));
         }
 
         public void WriteAnimeJaNaiConf(string fullPath)
         {
+            var parser = ParsedAnimeJaNaiConf(AnimeJaNaiConf);
+            parser?.Save(fullPath);
+        }
+
+        public static ConfigParser? ParsedAnimeJaNaiConf(AnimeJaNaiConf conf)
+        {
+            if (conf is null)
+            {
+                return null;
+            }
+
             var parser = new ConfigParser();
 
-            parser.SetValue("global", "backend", SelectedBackend.ToString());
-            parser.SetValue("global", "logging", EnableLogging ? "yes" : "no");
+            parser.SetValue("global", "backend", conf.SelectedBackend.ToString());
+            parser.SetValue("global", "logging", conf.EnableLogging ? "yes" : "no");
 
-            foreach (var profile in UpscaleSlots)
+            foreach (var profile in conf.UpscaleSlots)
             {
                 var section = $"slot_{profile.SlotNumber}";
                 parser.SetValue(section, "profile_name", profile.ProfileName);
@@ -600,7 +538,7 @@ chain_2_rife=no";
                 }
             }
 
-            parser.Save(fullPath);
+            return parser;
         }
 
         public void WriteAnimeJaNaiCurrentProfileConf(string fullPath)
@@ -628,21 +566,159 @@ chain_2_rife=no";
 
             parser.Save(fullPath);
         }
+
+        public void CheckAndDoBackup()
+        {
+            Task.Run(() =>
+            {
+                if (!Path.Exists(BackupPath))
+                {
+                    Directory.CreateDirectory(BackupPath);
+                }
+
+                var files = Directory.EnumerateFiles(BackupPath)
+                            .Where(f => Path.GetFileName(f).StartsWith("autobackup_"))
+                            .OrderByDescending(f => f)
+                            .ToList();
+
+                var currentConfStr = ParsedAnimeJaNaiConf(AnimeJaNaiConf)?.ToString();
+
+                if (files.Count >= 10)
+                {
+                    // Delete oldest backup
+                    File.Delete(files.Last());
+                }
+
+                if (files.Count > 0)
+                {
+                    var backupConf = ReadAnimeJaNaiConf(files.First());
+                    if ( currentConfStr == ParsedAnimeJaNaiConf(backupConf)?.ToString())
+                    {
+                        // Backup already exists - no need to create another backup
+                        return;
+                    }
+                }                
+
+                WriteAnimeJaNaiConf(Path.Join(BackupPath, $"autobackup_{DateTime.Now:yyyyMMdd-HHmmss}.conf"));
+            });
+        }
+    }
+
+    [DataContract]
+    public class AnimeJaNaiConf : ReactiveObject
+    {
+        public AnimeJaNaiConf(bool autoSave = false) 
+        {
+            Debug.WriteLine($"autoSave? {autoSave}");
+            if (autoSave)
+            {
+                this.WhenAnyValue(
+                    x => x.EnableLogging,
+                    x => x.TensorRtSelected,
+                    x => x.DirectMlSelected,
+                    x => x.NcnnSelected).Subscribe(x =>
+                    {
+                        Vm?.WriteAnimeJaNaiConf();
+                    });
+            }
+        }
+
+        private MainWindowViewModel? _vm;
+        public MainWindowViewModel? Vm
+        {
+            get => _vm;
+            set => this.RaiseAndSetIfChanged(ref _vm, value);
+        }
+
+        private bool _enableLogging = false;
+        [DataMember]
+        public bool EnableLogging
+        {
+            get => _enableLogging;
+            set => this.RaiseAndSetIfChanged(ref _enableLogging, value);
+        }
+
+        private bool _tensorRtSelected = true;
+        [DataMember]
+        public bool TensorRtSelected
+        {
+            get => _tensorRtSelected;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _tensorRtSelected, value);
+            }
+        }
+
+        private bool _directMlSelected = false;
+        [DataMember]
+        public bool DirectMlSelected
+        {
+            get => _directMlSelected;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _directMlSelected, value);
+            }
+        }
+
+        private bool _ncnnSelected = false;
+        [DataMember]
+        public bool NcnnSelected
+        {
+            get => _ncnnSelected;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _ncnnSelected, value);
+            }
+        }
+
+        private AvaloniaList<UpscaleSlot> _upscaleSlots = [];
+        [DataMember]
+        public AvaloniaList<UpscaleSlot> UpscaleSlots
+        {
+            get => _upscaleSlots;
+            set => this.RaiseAndSetIfChanged(ref _upscaleSlots, value);
+        }
+
+        public void SetTensorRtSelected()
+        {
+            TensorRtSelected = true;
+            DirectMlSelected = false;
+            NcnnSelected = false;
+        }
+
+        public void SetDirectMlSelected()
+        {
+            DirectMlSelected = true;
+            TensorRtSelected = false;
+            NcnnSelected = false;
+        }
+
+        public void SetNcnnSelected()
+        {
+            NcnnSelected = true;
+            TensorRtSelected = false;
+            DirectMlSelected = false;
+        }
+
+        public Backend SelectedBackend => TensorRtSelected ? Backend.TensorRT : DirectMlSelected ? Backend.DirectML : NcnnSelected ? Backend.NCNN : Backend.TensorRT;
     }
 
     [DataContract]
     public class UpscaleSlot: ReactiveObject
     {
-        public UpscaleSlot()
+        public UpscaleSlot(bool autoSave = false)
         {
-            this.WhenAnyValue(
-                x => x.SlotNumber,
-                x => x.ProfileName,
-                x => x.Chains.Count
-            ).Subscribe(x =>
+            if (autoSave)
             {
-                Vm?.WriteAnimeJaNaiConf();
-            });
+                this.WhenAnyValue(
+                    x => x.SlotNumber,
+                    x => x.ProfileName,
+                    x => x.Chains.Count
+                ).Subscribe(x =>
+                {
+                    Vm?.WriteAnimeJaNaiConf();
+                });
+            }
 
             this.WhenAnyValue(x => x.Vm).Subscribe(x =>
             {
@@ -697,20 +773,28 @@ chain_2_rife=no";
     [DataContract]
     public class UpscaleChain : ReactiveObject
     {
-        public UpscaleChain()
+        public UpscaleChain(bool autoSave = false)
         {
-            this.WhenAnyValue(
-                x => x.ChainNumber,
-                x => x.MinResolution,
-                x => x.MaxResolution,
-                x => x.MinFps,
-                x => x.MaxFps,
-                x => x.Models.Count
-            ).Subscribe(x =>
+            AutoSave = autoSave;
+
+            if (autoSave)
             {
-                Vm?.WriteAnimeJaNaiConf();
-            });
+                this.WhenAnyValue(
+                    x => x.ChainNumber,
+                    x => x.MinResolution,
+                    x => x.MaxResolution,
+                    x => x.MinFps,
+                    x => x.MaxFps,
+                    x => x.Models.Count,
+                    x => x.EnableRife
+                ).Subscribe(x =>
+                {
+                    Vm?.WriteAnimeJaNaiConf();
+                });
+            }
         }
+
+        public bool AutoSave { get; set; }
 
         public MainWindowViewModel? Vm { get; set; }
 
@@ -772,7 +856,7 @@ chain_2_rife=no";
 
         public void AddModel()
         {
-            Models.Add(new UpscaleModel
+            Models.Add(new UpscaleModel(AutoSave)
             {
                 Vm = Vm,
                 AllModels = MainWindowViewModel.GetAllModels(),
@@ -808,17 +892,20 @@ chain_2_rife=no";
     [DataContract]
     public class UpscaleModel : ReactiveObject
     {
-        public UpscaleModel()
+        public UpscaleModel(bool autoSave = false)
         {
-            this.WhenAnyValue(
-                x => x.ModelNumber,
-                x => x.ResizeHeightBeforeUpscale,
-                x => x.ResizeFactorBeforeUpscale,
-                x => x.Name
-            ).Subscribe(x =>
+            if (autoSave)
             {
-                Vm?.WriteAnimeJaNaiConf();
-            });
+                this.WhenAnyValue(
+                    x => x.ModelNumber,
+                    x => x.ResizeHeightBeforeUpscale,
+                    x => x.ResizeFactorBeforeUpscale,
+                    x => x.Name
+                ).Subscribe(x =>
+                {
+                    Vm?.WriteAnimeJaNaiConf();
+                });
+            }
         }
 
         public MainWindowViewModel? Vm { get; set; }
