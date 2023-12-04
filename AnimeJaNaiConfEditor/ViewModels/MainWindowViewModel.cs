@@ -42,6 +42,8 @@ namespace AnimeJaNaiConfEditor.ViewModels
             CheckAndDoBackup();
 
             SelectedMpvProfile = ReadCurrentProfileFromMpvConf();
+
+            InitializeSelectedSlot();
         }
 
         private string[] _commonResolutions = [
@@ -743,6 +745,29 @@ chain_2_rife=no";
             var result = Regex.Replace(confText, pattern, $"[default]\nprofile={replacementProfile}", RegexOptions.Multiline);
 
             File.WriteAllText(MpvConfPath, result);
+        }
+
+        private void InitializeSelectedSlot()
+        {
+            if (SelectedMpvProfile == null || SelectedMpvProfile == "upscale-off") 
+            { 
+                return; 
+            }
+
+            var defaultSlot = DefaultUpscaleSlots.Where(x => x.MpvProfileName == SelectedMpvProfile).FirstOrDefault();
+
+            if (defaultSlot != null)
+            {
+                HandleShowDefaultProfile(defaultSlot.SlotNumber);
+                return;
+            }
+
+            var customSlot = AnimeJaNaiConf.UpscaleSlots.Where(x => x.MpvProfileName == SelectedMpvProfile).FirstOrDefault();
+
+            if (customSlot != null)
+            {
+                HandleShowCustomProfile(customSlot.SlotNumber);
+            }
         }
     }
 
