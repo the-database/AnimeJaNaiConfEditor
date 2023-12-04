@@ -31,10 +31,9 @@ namespace AnimeJaNaiConfEditor.ViewModels
             DefaultUpscaleSlots[0].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 4090";
             DefaultUpscaleSlots[1].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3080";
             DefaultUpscaleSlots[2].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3060";
-            // TODO fix all Path.GetFullPath
             AnimeJaNaiConf = ReadAnimeJaNaiConf(AnimeJaNaiConfPath, true);
 
-            
+
             for (var i = 0; i < AnimeJaNaiConf.UpscaleSlots.Count; i++)
             {
                 AnimeJaNaiConf.UpscaleSlots[i].MpvProfileName = $"upscale-on-{i + 1}";
@@ -128,7 +127,7 @@ chain_2_model_1_resize_factor_before_upscale=100
 chain_2_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
 chain_2_rife=no";
 
-        public string ExePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        public string ExePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
         private static readonly string BACKUP_PATH_RELATIVE = "./backups";
         public string BackupPath => Path.GetFullPath(Path.Combine(ExePath, BACKUP_PATH_RELATIVE));

@@ -176,7 +176,7 @@
 
     <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" >
       <StackPanel Margin="20">
-
+      
         <!-- Global Settings -->
         <Grid IsVisible="{Binding ShowGlobalSettings}">
           <StackPanel Grid.Column="0">
