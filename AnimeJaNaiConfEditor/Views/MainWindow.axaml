@@ -231,24 +231,24 @@
                             <StackPanel>
                               <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resolution Range</TextBlock>
-                                <TextBox Margin="0,0,5,0" Text="{Binding MinResolution}" IsReadOnly="True" IsEnabled="False" />
+                                <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MinResolution, Mode=TwoWay}"
+                                               ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-
 
                                 <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
-                                <TextBox Margin="0,0,5,0" Text="{Binding MaxResolution}" IsReadOnly="True" IsEnabled="False" />
+                                <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}"
+                                               ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video resolutions to activate this chain. Larger resolutions require more processing power to upscale.</TextBlock>
+                                <TextBlock Width="600" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale.</TextBlock>
                               </StackPanel>
 
                               <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">FPS Range</TextBlock>
-                                <TextBox Margin="0,0,5,0" Text="{Binding MinFps}" IsReadOnly="True" IsEnabled="False" />
+                                <ui:NumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MinFps}" Minimum="0" Maximum="999" Width="80" />
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
 
-
                                 <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
-                                <TextBox Margin="0,0,5,0" Text="{Binding MaxFps}" IsReadOnly="True" IsEnabled="False" />
+                                <ui:NumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
                                 <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale.</TextBlock>
                               </StackPanel>
@@ -274,7 +274,7 @@
                                               <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
                                               <TextBox Margin="0,0,5,0" Text="{Binding ResizeHeightBeforeUpscale}" IsReadOnly="True" IsEnabled="False" />
                                               <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                              <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable. Downscaling the video improves performance; for most sources downscaling reduces quality but some blurry sources may see improved sharpness with some downscaling.</TextBlock>
+                                              <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable. Downscaling the video improves performance; for most sources downscaling reduces quality but some blurry sources may see improved sharpness with the right amount of downscaling.</TextBlock>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
                                               <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
@@ -287,7 +287,13 @@
                                             <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
                                               <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
                                               <ComboBox ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" Width="400" IsEnabled="False" />
-                                              <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">The upscaling model to run.</TextBlock>
+                                              <Button Margin="5,0,0,0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenModelsDirectory}">
+                                                <StackPanel Orientation="Horizontal">
+                                                  <materialIcons:MaterialIcon Kind="Launch" />
+                                                  <TextBlock Margin="5,0,0,0" Text="Open Models Directory" />
+                                                </StackPanel>
+                                              </Button>
+                                              <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">The upscaling model to run. To choose from more models, add ONNX model files to the models directory.</TextBlock>
                                             </StackPanel>
                                           </StackPanel>
                                         </Grid>

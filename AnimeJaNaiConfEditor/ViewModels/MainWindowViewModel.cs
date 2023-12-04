@@ -147,16 +147,9 @@ chain_2_rife=no";
             set
             {
                 this.RaiseAndSetIfChanged(ref _showDefaultProfiles, value);
-                this.RaisePropertyChanged(nameof(DefaultProfile1Active));
-                this.RaisePropertyChanged(nameof(DefaultProfile2Active));
-                this.RaisePropertyChanged(nameof(DefaultProfile3Active));
                 this.RaisePropertyChanged(nameof(CurrentSlot));
             }
         }
-
-        public bool DefaultProfile1Active => ShowDefaultProfiles && SelectedSlotNumber == 1.ToString();
-        public bool DefaultProfile2Active => ShowDefaultProfiles && SelectedSlotNumber == 2.ToString();
-        public bool DefaultProfile3Active => ShowDefaultProfiles && SelectedSlotNumber == 3.ToString();
 
         private bool _showCustomProfiles = true; // TODO 
         [DataMember] public bool ShowCustomProfiles
@@ -177,9 +170,6 @@ chain_2_rife=no";
             {
                 this.RaiseAndSetIfChanged(ref _selectedSlotNumber, value);
                 this.RaisePropertyChanged(nameof(CurrentSlot));
-                this.RaisePropertyChanged(nameof(DefaultProfile1Active));
-                this.RaisePropertyChanged(nameof(DefaultProfile2Active));
-                this.RaisePropertyChanged(nameof(DefaultProfile3Active));
             }
         }
 
@@ -195,7 +185,7 @@ chain_2_rife=no";
             }
         }
 
-        public bool MpvConfDetected => SelectedMpvProfile != null;
+        public bool MpvConfDetected => File.Exists(MpvConfPath);
         
 
         public void HandleShowGlobalSettings()
@@ -708,7 +698,7 @@ chain_2_rife=no";
 
         private string? ReadCurrentProfileFromMpvConf()
         {
-            if (!File.Exists(MpvConfPath))
+            if (!MpvConfDetected)
             {
                 // can't find mpv.conf - ignore and return
                 return null;
@@ -732,7 +722,7 @@ chain_2_rife=no";
 
         private void WriteCurrentProfileToMpvConf(bool upscaleOff = false)
         {
-            if (!File.Exists(MpvConfPath))
+            if (!MpvConfDetected)
             {
                 // can't find mpv.conf - ignore and return
                 return;
@@ -894,7 +884,11 @@ chain_2_rife=no";
             this.WhenAnyValue(x => x.Vm).Subscribe(x =>
             {
                 sub?.Dispose();
-                sub = Vm.WhenAnyValue(x => x.SelectedSlotNumber, x => x.ShowCustomProfiles).Subscribe(x =>
+                sub = Vm.WhenAnyValue(
+                    x => x.SelectedSlotNumber, 
+                    x => x.ShowCustomProfiles,
+                    x => x.ShowDefaultProfiles
+                    ).Subscribe(x =>
                 {
                     this.RaisePropertyChanged(nameof(ActiveSlot));
                     Vm?.RaisePropertyChanged("AllSlots");
