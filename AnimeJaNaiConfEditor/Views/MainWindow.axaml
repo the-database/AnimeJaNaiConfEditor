@@ -95,20 +95,28 @@
           <DataTemplate x:DataType="vm:UpscaleSlot">
             <Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}"
                     Classes.active="{Binding ActiveSlot}"
-                    Classes.selectedprofile="{Binding IsSelectedMpvProfile}"
                     Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowDefaultProfile}"
                     CommandParameter="{Binding SlotNumber}"
                     ClickMode="Press">
               <StackPanel>
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding IsSelectedMpvProfile}">
                   <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
-                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195">
-                    <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" IsVisible="{Binding IsSelectedMpvProfile}" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195" FontWeight="Bold">
+                    <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" />
                     <Run Text="{Binding ProfileName}"></Run>
-                    <TextBlock FontSize="11" IsVisible="{Binding IsSelectedMpvProfile}" VerticalAlignment="Center"> (Default)</TextBlock>
+                    <TextBlock FontSize="11" VerticalAlignment="Center"> (Default)</TextBlock>
                   </TextBlock>
                   <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Shift+{0}}" VerticalAlignment="Center"></TextBlock>
                 </StackPanel>
+
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding !IsSelectedMpvProfile}">
+                  <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195">
+                    <Run Text="{Binding ProfileName}"></Run>
+                  </TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Shift+{0}}" VerticalAlignment="Center"></TextBlock>
+                </StackPanel>
+                
                 <TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5" Text="{Binding DescriptionText}" />
               </StackPanel>
             </Button>
@@ -124,17 +132,24 @@
           <DataTemplate x:DataType="vm:UpscaleSlot">
             <Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}"
                     Classes.active="{Binding ActiveSlot}"
-                    Classes.selectedprofile="{Binding IsSelectedMpvProfile}"
                     Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowCustomProfile}"
                     CommandParameter="{Binding SlotNumber}"
                     ClickMode="Press">
               <StackPanel>
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding IsSelectedMpvProfile}">
+                  <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195" FontWeight="Bold">
+                    <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" />
+                    <Run Text="{Binding ProfileName}"></Run>
+                    <TextBlock FontSize="11" VerticalAlignment="Center"> (Default)</TextBlock>
+                  </TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Ctrl+{0}}" VerticalAlignment="Center"></TextBlock>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" IsVisible="{Binding !IsSelectedMpvProfile}">
                   <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
                   <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195">
-                    <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" IsVisible="{Binding IsSelectedMpvProfile}" />
                     <Run Text="{Binding ProfileName}"></Run>
-                    <TextBlock FontSize="11" IsVisible="{Binding IsSelectedMpvProfile}" VerticalAlignment="Center"> (Default)</TextBlock>
                   </TextBlock>
                   <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Ctrl+{0}}" VerticalAlignment="Center"></TextBlock>
                 </StackPanel>
