@@ -31,7 +31,8 @@ namespace AnimeJaNaiConfEditor.ViewModels
             DefaultUpscaleSlots[0].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 4090";
             DefaultUpscaleSlots[1].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3080";
             DefaultUpscaleSlots[2].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3060";
-            AnimeJaNaiConf = ReadAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"), true);
+            // TODO fix all Path.GetFullPath
+            AnimeJaNaiConf = ReadAnimeJaNaiConf(AnimeJaNaiConfPath, true);
 
             
             for (var i = 0; i < AnimeJaNaiConf.UpscaleSlots.Count; i++)
@@ -127,10 +128,16 @@ chain_2_model_1_resize_factor_before_upscale=100
 chain_2_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
 chain_2_rife=no";
 
-        private static readonly string BACKUP_PATH_RELATIVE = "./backups";
-        public string BackupPath => Path.GetFullPath(BACKUP_PATH_RELATIVE);
+        public string ExePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
-        public string MpvConfPath = Path.GetFullPath("../portable_config/mpv.conf");
+        private static readonly string BACKUP_PATH_RELATIVE = "./backups";
+        public string BackupPath => Path.GetFullPath(Path.Combine(ExePath, BACKUP_PATH_RELATIVE));
+
+        public string MpvConfPath => Path.GetFullPath(Path.Combine(ExePath, "../portable_config/mpv.conf"));
+
+        public string AnimeJaNaiConfPath => Path.GetFullPath(Path.Combine(ExePath, "./animejanai.conf"));
+
+        public string OnnxPath => Path.GetFullPath(Path.Combine(ExePath, "./onnx"));
 
         private bool _showGlobalSettings = false; // TODO
         [DataMember]
@@ -329,10 +336,9 @@ chain_2_rife=no";
             }
         }
 
-        public static AvaloniaList<string> GetAllModels()
+        public AvaloniaList<string> GetAllModels()
         {
-            var modelsPath = Path.GetFullPath(@"./onnx"); 
-            return new AvaloniaList<string>(Directory.GetFiles(modelsPath).Where(filename => Path.GetExtension(filename).Equals(".onnx", StringComparison.CurrentCultureIgnoreCase))
+            return new AvaloniaList<string>(Directory.GetFiles(OnnxPath).Where(filename => Path.GetExtension(filename).Equals(".onnx", StringComparison.CurrentCultureIgnoreCase))
                 .Select(filename => Path.GetFileNameWithoutExtension(filename))
                 .Order().ToList());
         }
@@ -535,7 +541,7 @@ chain_2_rife=no";
 
         public void WriteAnimeJaNaiConf()
         {
-            WriteAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"));
+            WriteAnimeJaNaiConf(AnimeJaNaiConfPath);
         }
 
         public void WriteAnimeJaNaiConf(string fullPath)
@@ -665,7 +671,7 @@ chain_2_rife=no";
                 process.StartInfo.RedirectStandardError = false;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = false;
-                process.StartInfo.WorkingDirectory = Path.GetFullPath(".");
+                process.StartInfo.WorkingDirectory = ExePath;
 
                 process.Start();
                 await process.WaitForExitAsync();
@@ -678,7 +684,7 @@ chain_2_rife=no";
         {
             await Task.Run(() =>
             {
-                Process.Start("explorer.exe", Path.GetFullPath(@"./onnx"));
+                Process.Start("explorer.exe", OnnxPath);
             });
         }
 
@@ -1052,7 +1058,7 @@ chain_2_rife=no";
             Models.Add(new UpscaleModel(AutoSave)
             {
                 Vm = Vm,
-                AllModels = MainWindowViewModel.GetAllModels(),
+                AllModels = Vm?.GetAllModels(),
             });
 
             UpdateModelHeaders();
