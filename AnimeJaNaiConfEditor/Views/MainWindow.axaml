@@ -38,6 +38,32 @@
         </Style>
       </Style>
     </Style>
+    <Style Selector="Button.selectedprofile">
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Button.transparent">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Style Selector="^:pointerover">
+        <Style Selector="^ /template/ ui|FABorder#Root">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Foreground" Value="Transparent" />
+        </Style>
+      </Style>
+
+      <Style Selector="^:pressed">
+        <Style Selector="^ /template/ ui|FABorder#Root">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Foreground" Value="Transparent" />
+        </Style>
+      </Style>
+    </Style>
   </Window.Styles>
 
   <Design.DataContext>
@@ -51,7 +77,10 @@
 
   <Grid ColumnDefinitions="300,*" RowDefinitions="*">
     <StackPanel Grid.Column="0" Background="#33000000">
-      <Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}" Classes.active="{Binding ShowGlobalSettings}" HorizontalContentAlignment="Left">
+      <TextBlock Margin="0">
+
+      </TextBlock>
+      <Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}" Classes.active="{Binding ShowGlobalSettings}" HorizontalContentAlignment="Left" ClickMode="Press">
         <StackPanel Orientation="Horizontal" >
           <materialIcons:MaterialIcon Kind="Gear" VerticalAlignment="Center" />
           <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Global Settings</TextBlock>
@@ -60,42 +89,33 @@
       <TextBlock Margin="10">
         Default Profiles (Read-only)
       </TextBlock>
-      <Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="1" Classes.active="{Binding DefaultProfile1Active}" ClickMode="Press">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <materialIcons:MaterialIcon Kind="Number1Circle" VerticalAlignment="Center" />
-            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190">
-              Quality
-            </TextBlock>
-            <TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+1)" />
-          </StackPanel>
-          <TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5">Minimum Suggested GPU: NVIDIA RTX 4090</TextBlock>
-        </StackPanel>
-      </Button>
-      <Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="2" Classes.active="{Binding DefaultProfile2Active}">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <materialIcons:MaterialIcon Kind="Number2Circle" VerticalAlignment="Center" />
-            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190">
-              Balanced
-            </TextBlock>
-            <TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+2)" />
-          </StackPanel>
-          <TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5">Minimum Suggested GPU: NVIDIA RTX 3080</TextBlock>
-        </StackPanel>
-      </Button>
-      <Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowDefaultProfile}" CommandParameter="3" Classes.active="{Binding DefaultProfile3Active}">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <materialIcons:MaterialIcon Kind="Number3Circle" VerticalAlignment="Center" />
-            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190">
-              Performance
-            </TextBlock>
-            <TextBlock FontSize="10" FontFamily="Consolas" Text="(Shift+3)" />
-          </StackPanel>
-          <TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5">Minimum Suggested GPU: NVIDIA RTX 3060</TextBlock>
-        </StackPanel>
-      </Button>
+      
+      <ItemsControl ItemsSource="{Binding DefaultUpscaleSlots}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:UpscaleSlot">
+            <Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}"
+                    Classes.active="{Binding ActiveSlot}"
+                    Classes.selectedprofile="{Binding IsSelectedMpvProfile}"
+                    Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowDefaultProfile}"
+                    CommandParameter="{Binding SlotNumber}"
+                    ClickMode="Press">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195">
+                    <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" IsVisible="{Binding IsSelectedMpvProfile}" />
+                    <Run Text="{Binding ProfileName}"></Run>
+                    <TextBlock FontSize="11" IsVisible="{Binding IsSelectedMpvProfile}" VerticalAlignment="Center"> (Default)</TextBlock>
+                  </TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Shift+{0}}" VerticalAlignment="Center"></TextBlock>
+                </StackPanel>
+                <TextBlock Margin="0,5,10,0" FontSize="10" Opacity=".5" Text="{Binding DescriptionText}" />
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      
       <TextBlock Margin="10">
         Custom Profiles
       </TextBlock>
@@ -104,15 +124,19 @@
           <DataTemplate x:DataType="vm:UpscaleSlot">
             <Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}"
                     Classes.active="{Binding ActiveSlot}"
+                    Classes.selectedprofile="{Binding IsSelectedMpvProfile}"
                     Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowCustomProfile}"
-                    CommandParameter="{Binding SlotNumber}">
+                    CommandParameter="{Binding SlotNumber}"
+                    ClickMode="Press">
               <StackPanel>
                 <StackPanel Orientation="Horizontal">
                   <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
                   <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195">
-                    <Run Text="{Binding ProfileName }"></Run>
+                    <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" IsVisible="{Binding IsSelectedMpvProfile}" />
+                    <Run Text="{Binding ProfileName}"></Run>
+                    <TextBlock FontSize="11" IsVisible="{Binding IsSelectedMpvProfile}" VerticalAlignment="Center"> (Default)</TextBlock>
                   </TextBlock>
-                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=(Ctrl+{0})}" VerticalAlignment="Center"></TextBlock>
+                  <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Ctrl+{0}}" VerticalAlignment="Center"></TextBlock>
                 </StackPanel>
               </StackPanel>
             </Button>
@@ -130,7 +154,7 @@
               Run Benchmarks
             </TextBlock>
           </StackPanel>
-          <TextBlock Width="280" TextWrapping="WrapWithOverflow" Margin="0,5,10,0" FontSize="10" Opacity=".5">Launch the benchmark tool to measure the performance of your hardware for several combinations of upscaling settings. This may take several minutes.</TextBlock>
+          <TextBlock Width="280" TextWrapping="WrapWithOverflow" Margin="0,5,10,0" FontSize="10" Opacity=".5">Launch the benchmark tool to measure the performance of your hardware for various combinations of upscaling settings. This may take several minutes.</TextBlock>
         </StackPanel>
       </Button>
     </StackPanel>
@@ -181,6 +205,13 @@
             <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
               <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Profile Name</TextBlock>
               <TextBox Width="500" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="True" IsEnabled="False" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="10,10,0,10" IsVisible="{Binding MpvConfDetected}">
+              <Button Classes="transparent" Command="{Binding SelectDefaultProfile}">
+                <CheckBox IsChecked="{Binding CurrentSlot.IsSelectedMpvProfile}" Content="Set as Default Profile in mpv" IsHitTestVisible="False" />
+              </Button>
+              <TextBlock FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">Use this profile by default when launching mpv.</TextBlock>
             </StackPanel>
 
             <ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
@@ -256,7 +287,7 @@
                                             <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
                                               <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
                                               <ComboBox ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" Width="400" IsEnabled="False" />
-                                              <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Name of the model to run.</TextBlock>
+                                              <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">The upscaling model to run.</TextBlock>
                                             </StackPanel>
                                           </StackPanel>
                                         </Grid>
@@ -296,6 +327,15 @@
                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Profile Name</TextBlock>
                 <TextBox Width="500" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="False" />
               </StackPanel>
+
+
+              <StackPanel Orientation="Horizontal" Margin="10,10,0,10" IsVisible="{Binding MpvConfDetected}">
+                <Button Classes="transparent" Command="{Binding SelectDefaultProfile}">
+                  <CheckBox IsChecked="{Binding CurrentSlot.IsSelectedMpvProfile}" Content="Set as Default Profile in mpv" IsHitTestVisible="False" />
+                </Button>
+                <TextBlock FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">Use this profile by default when launching mpv.</TextBlock>
+              </StackPanel>
+
 
               <ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
                 <ItemsControl.ItemTemplate>
@@ -370,7 +410,13 @@
                                               <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
                                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
                                                 <ComboBox ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" Width="400"></ComboBox>
-                                                <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Name of the model to run.</TextBlock>
+                                                <Button Margin="5,0,0,0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenModelsDirectory}">
+                                                  <StackPanel Orientation="Horizontal">
+                                                    <materialIcons:MaterialIcon Kind="Launch" />
+                                                    <TextBlock Margin="5,0,0,0" Text="Open Models Directory" />
+                                                  </StackPanel>
+                                                </Button>
+                                                <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">The upscaling model to run. To choose from more models, add ONNX model files to the models directory.</TextBlock>
                                               </StackPanel>
                                             </StackPanel>
 
@@ -455,7 +501,7 @@
                 </StackPanel>
               </Button>
             </StackPanel>
-            
+
             <StackPanel Margin="0,10,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
 
               <Button Margin="10,0,10,0" Click="ImportCurrentProfileConfButtonClick">

@@ -25,9 +25,23 @@ namespace AnimeJaNaiConfEditor.ViewModels
         public MainWindowViewModel()
         {
             DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(DEFAULT_PROFILES_CONF)).UpscaleSlots;
+            DefaultUpscaleSlots[0].MpvProfileName = "upscale-on-quality";
+            DefaultUpscaleSlots[1].MpvProfileName = "upscale-on-balanced";
+            DefaultUpscaleSlots[2].MpvProfileName = "upscale-on-performance";
+            DefaultUpscaleSlots[0].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 4090";
+            DefaultUpscaleSlots[1].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3080";
+            DefaultUpscaleSlots[2].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3060";
             AnimeJaNaiConf = ReadAnimeJaNaiConf(Path.GetFullPath(@".\animejanai.conf"), true);
 
+            
+            for (var i = 0; i < AnimeJaNaiConf.UpscaleSlots.Count; i++)
+            {
+                AnimeJaNaiConf.UpscaleSlots[i].MpvProfileName = $"upscale-on-{i + 1}";
+            }
+
             CheckAndDoBackup();
+
+            SelectedMpvProfile = ReadCurrentProfileFromMpvConf();
         }
 
         private string[] _commonResolutions = [
@@ -114,6 +128,8 @@ chain_2_rife=no";
         private static readonly string BACKUP_PATH_RELATIVE = "./backups";
         public string BackupPath => Path.GetFullPath(BACKUP_PATH_RELATIVE);
 
+        public string MpvConfPath = Path.GetFullPath("../portable_config/mpv.conf");
+
         private bool _showGlobalSettings = false; // TODO
         [DataMember]
         public bool ShowGlobalSettings
@@ -164,6 +180,21 @@ chain_2_rife=no";
                 this.RaisePropertyChanged(nameof(DefaultProfile3Active));
             }
         }
+
+        private string? _selectedMpvProfile;
+        [DataMember] 
+        public string? SelectedMpvProfile
+        {
+            get => _selectedMpvProfile;
+            set 
+            { 
+                this.RaiseAndSetIfChanged(ref _selectedMpvProfile, value);
+                this.RaisePropertyChanged(nameof(MpvConfDetected));
+            }
+        }
+
+        public bool MpvConfDetected => SelectedMpvProfile != null;
+        
 
         public void HandleShowGlobalSettings()
         {
@@ -636,7 +667,7 @@ chain_2_rife=no";
                 using var process = new Process();
 
                 process.StartInfo.FileName = "cmd.exe";
-                process.StartInfo.Arguments = @"/C .\animejanai_benchmark_all.bat";
+                process.StartInfo.Arguments = @"/C .\benchmarks\animejanai_benchmark_all.bat";
 
                 process.StartInfo.RedirectStandardOutput = false;
                 process.StartInfo.RedirectStandardError = false;
@@ -647,6 +678,71 @@ chain_2_rife=no";
                 process.Start();
                 await process.WaitForExitAsync();
             });
+        }
+
+#pragma warning disable CA1822 // Mark members as static
+        public async void OpenModelsDirectory()
+#pragma warning restore CA1822 // Mark members as static
+        {
+            await Task.Run(() =>
+            {
+                Process.Start("explorer.exe", Path.GetFullPath(@"./onnx"));
+            });
+        }
+
+        public void SelectDefaultProfile()
+        {
+            if (SelectedMpvProfile == CurrentSlot.MpvProfileName)
+            {
+                SelectedMpvProfile = null;
+                WriteCurrentProfileToMpvConf(true);
+            }
+            else
+            {
+                SelectedMpvProfile = CurrentSlot.MpvProfileName;
+                WriteCurrentProfileToMpvConf();
+            }   
+        }
+
+        private string? ReadCurrentProfileFromMpvConf()
+        {
+            if (!File.Exists(MpvConfPath))
+            {
+                // can't find mpv.conf - ignore and return
+                return null;
+            }
+
+            var confText = File.ReadAllText(MpvConfPath);
+
+            string pattern = @"\[default\]\s*profile=(.+)$";
+
+            Match match = Regex.Match(confText, pattern, RegexOptions.Multiline);
+
+            if (match.Success)
+            {
+                return match.Groups[1].Value.Trim();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private void WriteCurrentProfileToMpvConf(bool upscaleOff = false)
+        {
+            if (!File.Exists(MpvConfPath))
+            {
+                // can't find mpv.conf - ignore and return
+                return;
+            }
+
+            var confText = File.ReadAllText(MpvConfPath);
+            var pattern = @"\[default\]\s*profile=(.+)$";
+            var replacementProfile = upscaleOff ? "upscale-off" : CurrentSlot.MpvProfileName;
+
+            var result = Regex.Replace(confText, pattern, $"[default]\nprofile={replacementProfile}", RegexOptions.Multiline);
+
+            File.WriteAllText(MpvConfPath, result);
         }
     }
 
@@ -778,10 +874,17 @@ chain_2_rife=no";
                     this.RaisePropertyChanged(nameof(ActiveSlot));
                     Vm?.RaisePropertyChanged("AllSlots");
                 });
+
+                sub2?.Dispose();
+                sub2 = Vm.WhenAnyValue(x => x.SelectedMpvProfile).Subscribe(x =>
+                {
+                    this.RaisePropertyChanged(nameof(IsSelectedMpvProfile));
+                });
             });
         }
 
         private IDisposable? sub;
+        private IDisposable? sub2;
 
         private MainWindowViewModel? _vm;
         public MainWindowViewModel? Vm 
@@ -798,7 +901,9 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _slotNumber, value);
         }
 
-        public bool ActiveSlot => (Vm?.ShowCustomProfiles ?? false) && SlotNumber == Vm?.SelectedSlotNumber;
+        public bool ActiveSlot => ((Vm?.ShowCustomProfiles ?? false) && IsCustomSlot || (Vm?.ShowDefaultProfiles ?? false) && !IsCustomSlot) && SlotNumber == Vm?.SelectedSlotNumber;
+
+        public bool IsCustomSlot => MpvProfileName?.Any(char.IsDigit) ?? false;
 
         public string SlotIcon => $"Number{SlotNumber}Circle";
 
@@ -811,6 +916,24 @@ chain_2_rife=no";
             get => _profileName;
             set => this.RaiseAndSetIfChanged(ref _profileName, value);
         }
+
+        private string _descriptionText = string.Empty;
+        [DataMember] 
+        public string DescriptionText
+        {
+            get => _descriptionText;
+            set => this.RaiseAndSetIfChanged(ref _descriptionText, value);
+        }
+
+        private string _mpvProfileName;
+        [DataMember]
+        public string MpvProfileName
+        {
+            get => _mpvProfileName;
+            set => this.RaiseAndSetIfChanged(ref  _mpvProfileName, value);
+        }
+
+        public bool IsSelectedMpvProfile => MpvProfileName == Vm?.SelectedMpvProfile;
 
         private AvaloniaList<UpscaleChain> _chains = [];
         [DataMember]
