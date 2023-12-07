@@ -254,7 +254,7 @@
                                 <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}"
                                                ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                <TextBlock Width="600" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale.</TextBlock>
+                                <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale. A maximum resolution of 0x0 means that the chain will run on all video resolutions.</TextBlock>
                               </StackPanel>
 
                               <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
@@ -265,7 +265,7 @@
                                 <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
                                 <ui:NumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
                                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
-                                <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale.</TextBlock>
+                                <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale. A maximum fps of 0 means the chain will run on all video fps.</TextBlock>
                               </StackPanel>
                             </StackPanel>
 
@@ -383,7 +383,7 @@
                                   <ui:FAComboBox IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}"
                                                  ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
                                   <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                  <TextBlock Width="600" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale.</TextBlock>
+                                  <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale. A maximum resolution of 0x0 means that the chain will run on all video resolutions.</TextBlock>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
@@ -394,7 +394,7 @@
                                   <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
                                   <ui:NumberBox Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
                                   <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
-                                  <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale.</TextBlock>
+                                  <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale. A maximum fps of 0 means the chain will run on all video fps.</TextBlock>
                                 </StackPanel>
                               </StackPanel>
 

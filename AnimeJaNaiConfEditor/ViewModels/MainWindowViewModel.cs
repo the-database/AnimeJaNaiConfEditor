@@ -1004,7 +1004,7 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _chainNumber, value);
         }
 
-        private string _minResolution = 0.ToString();
+        private string _minResolution = "0x0";
         [DataMember]
         public string MinResolution
         {
@@ -1012,7 +1012,7 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _minResolution, value);
         }
 
-        private string _maxResolution = 0.ToString();
+        private string _maxResolution = "0x0";
         [DataMember] 
         public string MaxResolution
         {
