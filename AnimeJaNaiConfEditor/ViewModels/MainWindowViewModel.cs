@@ -1,20 +1,13 @@
 ﻿using Avalonia.Collections;
-using Avalonia.Controls;
-using DynamicData;
-using DynamicData.Binding;
 using ReactiveUI;
 using Salaros.Configuration;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace AnimeJaNaiConfEditor.ViewModels
@@ -66,21 +59,21 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         private static readonly string DEFAULT_PROFILES_CONF = @"[slot_1]
 profile_name=Quality
-chain_1_min_resolution=0x0
-chain_1_max_resolution=1280x720
+chain_1_min_resolution=1280x720
+chain_1_max_resolution=1920x1080
 chain_1_min_fps=0
 chain_1_max_fps=31
 chain_1_model_1_resize_height_before_upscale=0
 chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_SD_V1betaRC9_Compact
+chain_1_model_1_name=2x_AnimeJaNai_HD_V3_Compact
 chain_1_rife=no
-chain_2_min_resolution=1280x720
-chain_2_max_resolution=1920x1080
+chain_2_min_resolution=0x0
+chain_2_max_resolution=1280x720
 chain_2_min_fps=0
 chain_2_max_fps=31
 chain_2_model_1_resize_height_before_upscale=0
 chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_HD_V3_Compact
+chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact
 chain_2_rife=no
 chain_3_min_resolution=0x0
 chain_3_max_resolution=1920x1080
@@ -92,39 +85,39 @@ chain_3_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
 chain_3_rife=no
 [slot_2]
 profile_name=Balanced
-chain_1_min_resolution=0x0
-chain_1_max_resolution=1280x720
+chain_1_min_resolution=1280x720
+chain_1_max_resolution=1920x1080
 chain_1_min_fps=0
 chain_1_max_fps=31
 chain_1_model_1_resize_height_before_upscale=0
 chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_SD_V1betaRC9_Compact
+chain_1_model_1_name=2x_AnimeJaNai_HD_V3_UltraCompact
 chain_1_rife=no
-chain_2_min_resolution=1280x720
-chain_2_max_resolution=1920x1080
+chain_2_min_resolution=0x0
+chain_2_max_resolution=1280x720
 chain_2_min_fps=0
 chain_2_max_fps=31
 chain_2_model_1_resize_height_before_upscale=0
 chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_HD_V3_UltraCompact
+chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact
 chain_2_rife=no
 [slot_3]
 profile_name=Performance
-chain_1_min_resolution=0x0
-chain_1_max_resolution=1280x720
+chain_1_min_resolution=1280x720
+chain_1_max_resolution=1920x1080
 chain_1_min_fps=0
 chain_1_max_fps=31
 chain_1_model_1_resize_height_before_upscale=0
 chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_SD_V1betaRC9_Compact
+chain_1_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
 chain_1_rife=no
-chain_2_min_resolution=1280x720
-chain_2_max_resolution=1920x1080
+chain_2_min_resolution=0x0
+chain_2_max_resolution=1280x720
 chain_2_min_fps=0
 chain_2_max_fps=31
 chain_2_model_1_resize_height_before_upscale=0
 chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
+chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact
 chain_2_rife=no";
 
         public string ExePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
@@ -147,7 +140,8 @@ chain_2_rife=no";
         }
 
         private bool _showDefaultProfiles;
-        [DataMember] public bool ShowDefaultProfiles
+        [DataMember]
+        public bool ShowDefaultProfiles
         {
             get => _showDefaultProfiles;
             set
@@ -158,10 +152,12 @@ chain_2_rife=no";
         }
 
         private bool _showCustomProfiles = true; // TODO 
-        [DataMember] public bool ShowCustomProfiles
+        [DataMember]
+        public bool ShowCustomProfiles
         {
             get => _showCustomProfiles;
-            set {
+            set
+            {
                 this.RaiseAndSetIfChanged(ref _showCustomProfiles, value);
                 this.RaisePropertyChanged(nameof(CurrentSlot));
             }
@@ -180,19 +176,19 @@ chain_2_rife=no";
         }
 
         private string? _selectedMpvProfile;
-        [DataMember] 
+        [DataMember]
         public string? SelectedMpvProfile
         {
             get => _selectedMpvProfile;
-            set 
-            { 
+            set
+            {
                 this.RaiseAndSetIfChanged(ref _selectedMpvProfile, value);
                 this.RaisePropertyChanged(nameof(MpvConfDetected));
             }
         }
 
         public bool MpvConfDetected => File.Exists(MpvConfPath);
-        
+
 
         public void HandleShowGlobalSettings()
         {
@@ -226,7 +222,7 @@ chain_2_rife=no";
 
         public UpscaleSlot CurrentSlot
         {
-            get => ShowCustomProfiles ? AnimeJaNaiConf.UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : 
+            get => ShowCustomProfiles ? AnimeJaNaiConf.UpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() :
                 ShowDefaultProfiles ? DefaultUpscaleSlots.Where(slot => slot.SlotNumber == SelectedSlotNumber).FirstOrDefault() : null;
         }
 
@@ -287,7 +283,8 @@ chain_2_rife=no";
         public AvaloniaList<UpscaleSlot> DefaultUpscaleSlots
         {
             get => _defaultUpscaleSlots;
-            set {
+            set
+            {
                 this.RaiseAndSetIfChanged(ref _defaultUpscaleSlots, value);
                 this.RaisePropertyChanged(nameof(AllSlots));
             }
@@ -649,7 +646,7 @@ chain_2_rife=no";
                         // Backup already exists - no need to create another backup
                         return;
                     }
-                }                
+                }
 
                 WriteAnimeJaNaiConf(Path.Join(BackupPath, $"autobackup_{DateTime.Now:yyyyMMdd-HHmmss}.conf"));
             });
@@ -698,7 +695,7 @@ chain_2_rife=no";
             {
                 SelectedMpvProfile = CurrentSlot.MpvProfileName;
                 WriteCurrentProfileToMpvConf();
-            }   
+            }
         }
 
         private string? ReadCurrentProfileFromMpvConf()
@@ -744,9 +741,9 @@ chain_2_rife=no";
 
         private void InitializeSelectedSlot()
         {
-            if (SelectedMpvProfile == null || SelectedMpvProfile == "upscale-off") 
-            { 
-                return; 
+            if (SelectedMpvProfile == null || SelectedMpvProfile == "upscale-off")
+            {
+                return;
             }
 
             var defaultSlot = DefaultUpscaleSlots.Where(x => x.MpvProfileName == SelectedMpvProfile).FirstOrDefault();
@@ -769,7 +766,7 @@ chain_2_rife=no";
     [DataContract]
     public class AnimeJaNaiConf : ReactiveObject
     {
-        public AnimeJaNaiConf(bool autoSave = false) 
+        public AnimeJaNaiConf(bool autoSave = false)
         {
             Debug.WriteLine($"autoSave? {autoSave}");
             if (autoSave)
@@ -870,7 +867,7 @@ chain_2_rife=no";
     }
 
     [DataContract]
-    public class UpscaleSlot: ReactiveObject
+    public class UpscaleSlot : ReactiveObject
     {
         public UpscaleSlot(bool autoSave = false)
         {
@@ -890,7 +887,7 @@ chain_2_rife=no";
             {
                 sub?.Dispose();
                 sub = Vm.WhenAnyValue(
-                    x => x.SelectedSlotNumber, 
+                    x => x.SelectedSlotNumber,
                     x => x.ShowCustomProfiles,
                     x => x.ShowDefaultProfiles
                     ).Subscribe(x =>
@@ -911,10 +908,10 @@ chain_2_rife=no";
         private IDisposable? sub2;
 
         private MainWindowViewModel? _vm;
-        public MainWindowViewModel? Vm 
-        { 
-            get => _vm; 
-            set => this.RaiseAndSetIfChanged(ref _vm, value); 
+        public MainWindowViewModel? Vm
+        {
+            get => _vm;
+            set => this.RaiseAndSetIfChanged(ref _vm, value);
         }
 
         private string _slotNumber = string.Empty;
@@ -942,7 +939,7 @@ chain_2_rife=no";
         }
 
         private string _descriptionText = string.Empty;
-        [DataMember] 
+        [DataMember]
         public string DescriptionText
         {
             get => _descriptionText;
@@ -954,7 +951,7 @@ chain_2_rife=no";
         public string MpvProfileName
         {
             get => _mpvProfileName;
-            set => this.RaiseAndSetIfChanged(ref  _mpvProfileName, value);
+            set => this.RaiseAndSetIfChanged(ref _mpvProfileName, value);
         }
 
         public bool IsSelectedMpvProfile => MpvProfileName == Vm?.SelectedMpvProfile;
@@ -1013,7 +1010,7 @@ chain_2_rife=no";
         }
 
         private string _maxResolution = "0x0";
-        [DataMember] 
+        [DataMember]
         public string MaxResolution
         {
             get => _maxResolution;
@@ -1029,7 +1026,7 @@ chain_2_rife=no";
         }
 
         private string _maxFps = 0.ToString();
-        [DataMember] 
+        [DataMember]
         public string MaxFps
         {
             get => _maxFps;
@@ -1120,7 +1117,7 @@ chain_2_rife=no";
         [DataMember]
         public string ModelNumber
         {
-            get => _modelNumber;   
+            get => _modelNumber;
             set => this.RaiseAndSetIfChanged(ref _modelNumber, value);
         }
 
