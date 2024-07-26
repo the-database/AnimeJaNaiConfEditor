@@ -345,6 +345,15 @@ chain_2_rife=no";
             Console.WriteLine("OK");
         }
 
+        private static readonly Dictionary<string, string> rifeModelMapping = new()
+        {
+            { "RIFE 4.14", 414.ToString() },
+            { "RIFE 4.14 Lite", 4141.ToString() },
+            { "RIFE 4.13", 413.ToString() },
+            { "RIFE 4.13 Lite", 413.ToString() },
+            { "RIFE 4.6", 46.ToString() },
+        };
+
         public AnimeJaNaiConf ReadAnimeJaNaiConf(string fullPath, bool autoSave = false)
         {
             return ReadAnimeJaNaiConf(new ConfigParser(fullPath), autoSave);
@@ -487,8 +496,25 @@ chain_2_rife=no";
                             MaxResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_resolution"),
                             MinFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_fps"),
                             MaxFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_fps"),
-                            EnableRife = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife"))
+                            EnableRife = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife")),
+                            RifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model"),
+                            RifeEnsemble = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_ensemble")),
                         };
+
+                        if (int.TryParse(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_factor_numerator"), out var numerator))
+                        {
+                            chains[currentChainNumber].RifeFactorNumerator = numerator;
+                        }
+
+                        if (int.TryParse(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_factor_denominator"), out var denominator))
+                        {
+                            chains[currentChainNumber].RifeFactorDenominator = denominator;
+                        }
+
+                        if (decimal.TryParse(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_scene_detect_threshold"), out var scene_detect_threshold))
+                        {
+                            chains[currentChainNumber].RifeSceneDetectThreshold = scene_detect_threshold;
+                        }
 
                         var matchCurrentModelNumber = Regex.Match(key.Name, @"_model_(\d+)_");
 
@@ -611,6 +637,11 @@ chain_2_rife=no";
                 }
 
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_numerator", chain.RifeFactorNumerator ?? 0);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_denominator", chain.RifeFactorDenominator ?? 1);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", rifeModelMapping[chain.RifeModel]);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_ensemble", chain.RifeEnsemble);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_scene_detect_threshold", $"{chain.RifeSceneDetectThreshold ?? 0.015M}");
             }
 
             return parser;
@@ -1047,6 +1078,54 @@ chain_2_rife=no";
         {
             get => _enableRife;
             set => this.RaiseAndSetIfChanged(ref _enableRife, value);
+        }
+
+        private List<string> _rifeModelList = ["RIFE 4.14", "RIFE 4.14 Lite", "RIFE 4.13", "RIFE 4.13 Lite", "RIFE 4.6"];
+
+        public List<string> RifeModelList
+        {
+            get => _rifeModelList;
+            set => this.RaiseAndSetIfChanged(ref _rifeModelList, value);
+        }
+
+        private string _rifeModel = "RIFE 4.14";
+        [DataMember]
+        public string RifeModel
+        {
+            get => _rifeModel;
+            set => this.RaiseAndSetIfChanged(ref _rifeModel, value);
+        }
+
+        private bool _rifeEnsemble = false;
+        [DataMember]
+        public bool RifeEnsemble
+        {
+            get => _rifeEnsemble;
+            set => this.RaiseAndSetIfChanged(ref _rifeEnsemble, value);
+        }
+
+        private int? _rifeFactorNumerator = 2;
+        [DataMember]
+        public int? RifeFactorNumerator
+        {
+            get => _rifeFactorNumerator ?? 2;
+            set => this.RaiseAndSetIfChanged(ref _rifeFactorNumerator, value ?? 2);
+        }
+
+        private int? _rifeFactorDenominator = 1;
+        [DataMember]
+        public int? RifeFactorDenominator
+        {
+            get => _rifeFactorDenominator ?? 1;
+            set => this.RaiseAndSetIfChanged(ref _rifeFactorDenominator, value ?? 1);
+        }
+
+        private decimal? _rifeSceneDetectThreshold = 0.150M;
+        [DataMember]
+        public decimal? RifeSceneDetectThreshold
+        {
+            get => _rifeSceneDetectThreshold;
+            set => this.RaiseAndSetIfChanged(ref _rifeSceneDetectThreshold, value ?? 0.150M);
         }
 
         public void AddModel()
