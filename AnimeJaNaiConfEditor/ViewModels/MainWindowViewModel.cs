@@ -346,16 +346,31 @@ chain_2_rife=no";
             Console.WriteLine("OK");
         }
 
-        private static readonly Dictionary<string, string> rifeModelMapping = new()
+        public static readonly Dictionary<string, string> RIFE_MODEL_MAPPING = new()
         {
+            { "RIFE 4.20", 420.ToString() },
+            { "RIFE 4.19", 419.ToString() },
+            { "RIFE 4.18", 418.ToString() },
+            { "RIFE 4.17", 417.ToString() },
+            { "RIFE 4.17 Lite", 4171.ToString() },
+            { "RIFE 4.16 Lite", 4161.ToString() },
+            { "RIFE 4.15", 415.ToString() },
+            { "RIFE 4.15 Lite", 4151.ToString() },
             { "RIFE 4.14", 414.ToString() },
             { "RIFE 4.14 Lite", 4141.ToString() },
             { "RIFE 4.13", 413.ToString() },
             { "RIFE 4.13 Lite", 4131.ToString() },
+            { "RIFE 4.12", 412.ToString() },
+            { "RIFE 4.12 Lite", 4121.ToString() },
+            { "RIFE 4.11", 411.ToString() },
+            { "RIFE 4.10", 410.ToString() },
+            { "RIFE 4.9", 49.ToString() },
+            { "RIFE 4.8", 48.ToString() },
+            { "RIFE 4.7", 47.ToString() },
             { "RIFE 4.6", 46.ToString() },
         };
 
-        private static readonly Dictionary<string, string> reversedRifeModelMapping = rifeModelMapping.ToDictionary(x => x.Value, x => x.Key);
+        public static readonly Dictionary<string, string> REVERSED_RIFE_MODEL_MAPPING = RIFE_MODEL_MAPPING.ToDictionary(x => x.Value, x => x.Key);
 
         public AnimeJaNaiConf ReadAnimeJaNaiConf(string fullPath, bool autoSave = false)
         {
@@ -432,9 +447,9 @@ chain_2_rife=no";
 
                             var rifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model");
 
-                            if (rifeModel != null && reversedRifeModelMapping.ContainsKey(rifeModel))
+                            if (rifeModel != null && REVERSED_RIFE_MODEL_MAPPING.ContainsKey(rifeModel))
                             {
-                                chains[currentChainNumber].RifeModel = reversedRifeModelMapping[rifeModel];
+                                chains[currentChainNumber].RifeModel = REVERSED_RIFE_MODEL_MAPPING[rifeModel];
                             }
 
                             var matchCurrentModelNumber = Regex.Match(key.Name, @"_model_(\d+)_");
@@ -544,9 +559,9 @@ chain_2_rife=no";
 
                         var rifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model");
 
-                        if (rifeModel != null && reversedRifeModelMapping.ContainsKey(rifeModel))
+                        if (rifeModel != null && REVERSED_RIFE_MODEL_MAPPING.ContainsKey(rifeModel))
                         {
-                            chains[currentChainNumber].RifeModel = reversedRifeModelMapping[rifeModel];
+                            chains[currentChainNumber].RifeModel = REVERSED_RIFE_MODEL_MAPPING[rifeModel];
                         }
 
                         var matchCurrentModelNumber = Regex.Match(key.Name, @"_model_(\d+)_");
@@ -642,7 +657,7 @@ chain_2_rife=no";
                         chain.RifeModel = chain.RifeModelList.First();
                     }
 
-                    var rifeModel = rifeModelMapping[chain.RifeModel];
+                    var rifeModel = RIFE_MODEL_MAPPING[chain.RifeModel];
 
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", rifeModel);
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_numerator", chain.RifeFactorNumerator ?? 1);
@@ -684,7 +699,7 @@ chain_2_rife=no";
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_numerator", chain.RifeFactorNumerator ?? 0);
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_denominator", chain.RifeFactorDenominator ?? 1);
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", rifeModelMapping[chain.RifeModel]);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", RIFE_MODEL_MAPPING[chain.RifeModel]);
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_ensemble", chain.RifeEnsemble);
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_scene_detect_threshold", $"{chain.RifeSceneDetectThreshold ?? 0.015M}");
             }
@@ -1135,7 +1150,7 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _enableRife, value);
         }
 
-        private List<string> _rifeModelList = ["RIFE 4.14", "RIFE 4.14 Lite", "RIFE 4.13", "RIFE 4.13 Lite", "RIFE 4.6"];
+        private List<string> _rifeModelList = new(MainWindowViewModel.RIFE_MODEL_MAPPING.Keys);
 
         public List<string> RifeModelList
         {
