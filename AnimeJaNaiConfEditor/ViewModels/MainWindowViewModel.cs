@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -350,9 +351,11 @@ chain_2_rife=no";
             { "RIFE 4.14", 414.ToString() },
             { "RIFE 4.14 Lite", 4141.ToString() },
             { "RIFE 4.13", 413.ToString() },
-            { "RIFE 4.13 Lite", 413.ToString() },
+            { "RIFE 4.13 Lite", 4131.ToString() },
             { "RIFE 4.6", 46.ToString() },
         };
+
+        private static readonly Dictionary<string, string> reversedRifeModelMapping = rifeModelMapping.ToDictionary(x => x.Value, x => x.Key);
 
         public AnimeJaNaiConf ReadAnimeJaNaiConf(string fullPath, bool autoSave = false)
         {
@@ -408,7 +411,7 @@ chain_2_rife=no";
                                 MinFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_fps"),
                                 MaxFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_fps"),
                                 EnableRife = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife")),
-                                RifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model"),
+                                //RifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model"),
                                 RifeEnsemble = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_ensemble")),
                             };
 
@@ -425,6 +428,13 @@ chain_2_rife=no";
                             if (decimal.TryParse(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_scene_detect_threshold"), out var scene_detect_threshold))
                             {
                                 chains[currentChainNumber].RifeSceneDetectThreshold = scene_detect_threshold;
+                            }
+
+                            var rifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model");
+
+                            if (rifeModel != null && reversedRifeModelMapping.ContainsKey(rifeModel))
+                            {
+                                chains[currentChainNumber].RifeModel = reversedRifeModelMapping[rifeModel];
                             }
 
                             var matchCurrentModelNumber = Regex.Match(key.Name, @"_model_(\d+)_");
@@ -514,7 +524,6 @@ chain_2_rife=no";
                             MinFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_fps"),
                             MaxFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_fps"),
                             EnableRife = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife")),
-                            RifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model"),
                             RifeEnsemble = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_ensemble")),
                         };
 
@@ -531,6 +540,13 @@ chain_2_rife=no";
                         if (decimal.TryParse(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_scene_detect_threshold"), out var scene_detect_threshold))
                         {
                             chains[currentChainNumber].RifeSceneDetectThreshold = scene_detect_threshold;
+                        }
+
+                        var rifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model");
+
+                        if (rifeModel != null && reversedRifeModelMapping.ContainsKey(rifeModel))
+                        {
+                            chains[currentChainNumber].RifeModel = reversedRifeModelMapping[rifeModel];
                         }
 
                         var matchCurrentModelNumber = Regex.Match(key.Name, @"_model_(\d+)_");
@@ -621,7 +637,14 @@ chain_2_rife=no";
                     }
 
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", rifeModelMapping[chain.RifeModel]);
+                    if (chain.RifeModel == null)
+                    {
+                        chain.RifeModel = chain.RifeModelList.First();
+                    }
+
+                    var rifeModel = rifeModelMapping[chain.RifeModel];
+
+                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", rifeModel);
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_numerator", chain.RifeFactorNumerator ?? 1);
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_denominator", chain.RifeFactorDenominator ?? 1);
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_scene_detect_threshold", $"{chain.RifeSceneDetectThreshold ?? 0.015M}");
@@ -1027,7 +1050,7 @@ chain_2_rife=no";
 
             if (autoSave)
             {
-                this.WhenAnyValue(
+                var g1 = this.WhenAnyValue(
                     x => x.ChainNumber,
                     x => x.MinResolution,
                     x => x.MaxResolution,
@@ -1035,7 +1058,17 @@ chain_2_rife=no";
                     x => x.MaxFps,
                     x => x.Models.Count,
                     x => x.EnableRife
-                ).Subscribe(x =>
+                );
+
+                var g2 = this.WhenAnyValue(
+                    x => x.RifeFactorNumerator,
+                    x => x.RifeFactorNumerator,
+                    x => x.RifeModel,
+                    x => x.RifeSceneDetectThreshold,
+                    x => x.RifeEnsemble
+                );
+
+                g1.CombineLatest(g2).Subscribe(x =>
                 {
                     Vm?.WriteAnimeJaNaiConf();
                 });
