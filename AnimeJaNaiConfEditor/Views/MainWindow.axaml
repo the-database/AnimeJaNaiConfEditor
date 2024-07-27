@@ -462,7 +462,7 @@
                                 </Button>
 
                                 <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
-                                  <CheckBox IsChecked="{Binding EnableRife}" Content="Enable RIFE 2x Interpolation" />
+                                  <CheckBox IsChecked="{Binding EnableRife}" Content="Enable RIFE Interpolation" />
                                   <TextBlock FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">Whether or not to run RIFE video frame interpolation.</TextBlock>
                                 </StackPanel>
 
