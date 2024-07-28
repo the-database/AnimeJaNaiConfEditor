@@ -346,31 +346,115 @@ chain_2_rife=no";
             Console.WriteLine("OK");
         }
 
-        public static readonly Dictionary<string, string> RIFE_MODEL_MAPPING = new()
-        {
-            { "RIFE 4.20", 420.ToString() },
-            { "RIFE 4.19", 419.ToString() },
-            { "RIFE 4.18", 418.ToString() },
-            { "RIFE 4.17", 417.ToString() },
-            { "RIFE 4.17 Lite", 4171.ToString() },
-            { "RIFE 4.16 Lite", 4161.ToString() },
-            { "RIFE 4.15", 415.ToString() },
-            { "RIFE 4.15 Lite", 4151.ToString() },
-            { "RIFE 4.14", 414.ToString() },
-            { "RIFE 4.14 Lite", 4141.ToString() },
-            { "RIFE 4.13", 413.ToString() },
-            { "RIFE 4.13 Lite", 4131.ToString() },
-            { "RIFE 4.12", 412.ToString() },
-            { "RIFE 4.12 Lite", 4121.ToString() },
-            { "RIFE 4.11", 411.ToString() },
-            { "RIFE 4.10", 410.ToString() },
-            { "RIFE 4.9", 49.ToString() },
-            { "RIFE 4.8", 48.ToString() },
-            { "RIFE 4.7", 47.ToString() },
-            { "RIFE 4.6", 46.ToString() },
-        };
+        private static List<string>? _rifeModels = null;
 
-        public static readonly Dictionary<string, string> REVERSED_RIFE_MODEL_MAPPING = RIFE_MODEL_MAPPING.ToDictionary(x => x.Value, x => x.Key);
+        public static List<string> RifeModels
+        {
+            get
+            {
+                if (_rifeModels == null)
+                {
+                    var models = new List<string>();
+                    var modelsPath = @"..\vs-plugins\models\rife";
+
+                    if (!Directory.Exists(modelsPath))
+                    {
+                        return [];
+                    }
+
+                    var files = Directory.GetFiles(modelsPath, searchPattern: "*.onnx");
+
+                    foreach (var file in files)
+                    {
+                        Debug.WriteLine(file);
+                        var m = Regex.Match(Path.GetFileName(file), @"rife_v(\d+)\.(\d+)(_lite)?(_ensemble)?.onnx");
+                        if (m.Success)
+                        {
+                            var model = m.Groups[1].Value + m.Groups[2].Value;
+                            if (file.Contains("_lite"))
+                            {
+                                model += "1";
+                            }
+
+                            if (!models.Contains(model))
+                            {
+                                models.Add(model);
+                            }
+                        }
+                    }
+
+                    models.Sort(delegate (string m1, string m2)
+                    {
+                        var m1i = decimal.Parse(m1[..Math.Min(3, m1.Length)]);
+                        var m2i = decimal.Parse(m2[..Math.Min(3, m2.Length)]);
+
+                        if (m1.Length > 3)
+                        {
+                            m1i += .1m;
+                        }
+
+                        if (m2.Length > 3)
+                        {
+                            m2i += .1m;
+                        }
+
+                        return m2i.CompareTo(m1i);
+                    });
+
+                    _rifeModels = [.. models.Select(m => RifeValueToLabel(m))];
+                }
+
+                return _rifeModels;
+            }
+        }
+
+        public static string RifeLabelToValue(string rifeLabel)
+        {
+            var m = Regex.Match(rifeLabel, @"RIFE (\d+)\.(\d+)( Lite)?");
+            if (m.Success)
+            {
+                var value = $"{m.Groups[1].Value}{m.Groups[2].Value}";
+                if (m.Groups.Count > 2)
+                {
+                    value += "1";
+                }
+                return value;
+            }
+            else if (string.IsNullOrEmpty(rifeLabel))
+            {
+                return rifeLabel;
+            }
+
+            throw new ArgumentException(rifeLabel);
+        }
+
+        public static string RifeValueToLabel(string rifeValue)
+        {
+            string dec;
+
+            if (string.IsNullOrEmpty(rifeValue))
+            {
+                return rifeValue;
+            }
+
+            if (rifeValue.Length == 2)
+            {
+                dec = rifeValue[1].ToString();
+            }
+            else
+            {
+                dec = rifeValue.Substring(1, 2);
+            }
+
+            var modelName = $"RIFE {rifeValue[0]}.{dec}";
+
+            if (rifeValue.Length >= 4 && rifeValue.EndsWith('1'))
+            {
+                modelName += " Lite";
+            }
+
+            return modelName;
+        }
 
         public AnimeJaNaiConf ReadAnimeJaNaiConf(string fullPath, bool autoSave = false)
         {
@@ -447,9 +531,9 @@ chain_2_rife=no";
 
                             var rifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model");
 
-                            if (rifeModel != null && REVERSED_RIFE_MODEL_MAPPING.ContainsKey(rifeModel))
+                            if (rifeModel != null)
                             {
-                                chains[currentChainNumber].RifeModel = REVERSED_RIFE_MODEL_MAPPING[rifeModel];
+                                chains[currentChainNumber].RifeModel = RifeValueToLabel(rifeModel);
                             }
 
                             var matchCurrentModelNumber = Regex.Match(key.Name, @"_model_(\d+)_");
@@ -559,9 +643,9 @@ chain_2_rife=no";
 
                         var rifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model");
 
-                        if (rifeModel != null && REVERSED_RIFE_MODEL_MAPPING.ContainsKey(rifeModel))
+                        if (rifeModel != null)
                         {
-                            chains[currentChainNumber].RifeModel = REVERSED_RIFE_MODEL_MAPPING[rifeModel];
+                            chains[currentChainNumber].RifeModel = RifeValueToLabel(rifeModel);
                         }
 
                         var matchCurrentModelNumber = Regex.Match(key.Name, @"_model_(\d+)_");
@@ -654,10 +738,10 @@ chain_2_rife=no";
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
                     if (chain.RifeModel == null)
                     {
-                        chain.RifeModel = chain.RifeModelList.First();
+                        chain.RifeModel = chain.RifeModelList.FirstOrDefault("");
                     }
 
-                    var rifeModel = RIFE_MODEL_MAPPING[chain.RifeModel];
+                    var rifeModel = RifeLabelToValue(chain.RifeModel);
 
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", rifeModel);
                     parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_numerator", chain.RifeFactorNumerator ?? 1);
@@ -699,7 +783,7 @@ chain_2_rife=no";
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_numerator", chain.RifeFactorNumerator ?? 0);
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_denominator", chain.RifeFactorDenominator ?? 1);
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", RIFE_MODEL_MAPPING[chain.RifeModel]);
+                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", RifeLabelToValue(chain.RifeModel));
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_ensemble", chain.RifeEnsemble);
                 parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_scene_detect_threshold", $"{chain.RifeSceneDetectThreshold ?? 0.015M}");
             }
@@ -1077,7 +1161,7 @@ chain_2_rife=no";
 
                 var g2 = this.WhenAnyValue(
                     x => x.RifeFactorNumerator,
-                    x => x.RifeFactorNumerator,
+                    x => x.RifeFactorDenominator,
                     x => x.RifeModel,
                     x => x.RifeSceneDetectThreshold,
                     x => x.RifeEnsemble
@@ -1150,7 +1234,7 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _enableRife, value);
         }
 
-        private List<string> _rifeModelList = new(MainWindowViewModel.RIFE_MODEL_MAPPING.Keys);
+        private List<string> _rifeModelList = new(MainWindowViewModel.RifeModels);
 
         public List<string> RifeModelList
         {
