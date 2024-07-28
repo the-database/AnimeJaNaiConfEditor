@@ -355,7 +355,7 @@ chain_2_rife=no";
                 if (_rifeModels == null)
                 {
                     var models = new List<string>();
-                    var modelsPath = @"..\vs-plugins\models\rife";
+                    var modelsPath = Path.Combine(AppContext.BaseDirectory, @"..\vs-plugins\models\rife");
 
                     if (!Directory.Exists(modelsPath))
                     {
