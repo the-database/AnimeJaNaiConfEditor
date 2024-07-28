@@ -414,7 +414,7 @@ chain_2_rife=no";
             if (m.Success)
             {
                 var value = $"{m.Groups[1].Value}{m.Groups[2].Value}";
-                if (m.Groups.Count > 2)
+                if (m.Groups[3].Success)
                 {
                     value += "1";
                 }
@@ -1242,7 +1242,7 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _rifeModelList, value);
         }
 
-        private string _rifeModel = "RIFE 4.14";
+        private string _rifeModel = MainWindowViewModel.RifeModels.FirstOrDefault("");
         [DataMember]
         public string RifeModel
         {
