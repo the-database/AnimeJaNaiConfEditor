@@ -42,22 +42,10 @@
 
 
   <ItemGroup>
-    <None Update="animejanai - Copy.conf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="animejanai.conf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="onnx\2x_AnimeJaNai_HD_V3_Compact.onnx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="onnx\2x_AnimeJaNai_HD_V3_SuperUltraCompact.onnx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="onnx\2x_AnimeJaNai_HD_V3_UltraCompact.onnx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="onnx\2x_AnimeJaNai_SD_V1beta34_Compact.onnx">
+    <None Update="onnx\**">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
