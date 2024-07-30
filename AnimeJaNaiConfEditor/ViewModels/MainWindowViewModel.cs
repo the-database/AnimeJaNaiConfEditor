@@ -4,6 +4,7 @@ using Salaros.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -16,6 +17,8 @@ namespace AnimeJaNaiConfEditor.ViewModels
     [DataContract]
     public class MainWindowViewModel : ViewModelBase
     {
+        private static readonly CultureInfo ENGLISH_CULTURE = CultureInfo.GetCultureInfo("en-US");
+
         public MainWindowViewModel()
         {
             DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(DEFAULT_PROFILES_CONF)).UpscaleSlots;
@@ -723,19 +726,19 @@ chain_2_rife=no";
 
                 foreach (var chain in profile.Chains)
                 {
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_min_resolution", chain.MinResolution);
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_max_resolution", chain.MaxResolution);
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_min_fps", chain.MinFps);
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_max_fps", chain.MaxFps);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_min_resolution"), chain.MinResolution);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_max_resolution"), chain.MaxResolution);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_min_fps"), chain.MinFps);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_max_fps"), chain.MaxFps);
 
                     foreach (var model in chain.Models)
                     {
-                        parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_height_before_upscale", model.ResizeHeightBeforeUpscale);
-                        parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_factor_before_upscale", model.ResizeFactorBeforeUpscale);
-                        parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_name", model.Name);
+                        parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_height_before_upscale"), model.ResizeHeightBeforeUpscale);
+                        parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_factor_before_upscale"), model.ResizeFactorBeforeUpscale);
+                        parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_name"), model.Name);
                     }
 
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife"), chain.EnableRife ? "yes" : "no");
                     if (chain.RifeModel == null)
                     {
                         chain.RifeModel = chain.RifeModelList.FirstOrDefault("");
@@ -743,11 +746,11 @@ chain_2_rife=no";
 
                     var rifeModel = RifeLabelToValue(chain.RifeModel);
 
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", rifeModel);
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_numerator", chain.RifeFactorNumerator ?? 1);
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_denominator", chain.RifeFactorDenominator ?? 1);
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_scene_detect_threshold", $"{chain.RifeSceneDetectThreshold ?? 0.015M}");
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_ensemble", chain.RifeEnsemble ? "yes" : "no");
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_model"), rifeModel);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_factor_numerator"), chain.RifeFactorNumerator ?? 1);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_factor_denominator"), chain.RifeFactorDenominator ?? 1);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_scene_detect_threshold"), $"{chain.RifeSceneDetectThreshold ?? 0.015M}");
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_ensemble"), chain.RifeEnsemble ? "yes" : "no");
                 }
             }
 
@@ -768,24 +771,24 @@ chain_2_rife=no";
             parser.SetValue(section, "profile_name", slot.ProfileName);
             foreach (var chain in slot.Chains)
             {
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_min_resolution", chain.MinResolution);
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_max_resolution", chain.MaxResolution);
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_min_fps", chain.MinFps);
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_max_fps", chain.MaxFps);
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_min_resolution"), chain.MinResolution);
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_max_resolution"), chain.MaxResolution);
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_min_fps"), chain.MinFps);
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_max_fps"), chain.MaxFps);
 
                 foreach (var model in chain.Models)
                 {
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_height_before_upscale", model.ResizeHeightBeforeUpscale);
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_factor_before_upscale", model.ResizeFactorBeforeUpscale);
-                    parser.SetValue(section, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_name", model.Name);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_height_before_upscale"), model.ResizeHeightBeforeUpscale);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_resize_factor_before_upscale"), model.ResizeFactorBeforeUpscale);
+                    parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_model_{model.ModelNumber}_name"), model.Name);
                 }
 
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife", chain.EnableRife ? "yes" : "no");
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_numerator", chain.RifeFactorNumerator ?? 0);
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_factor_denominator", chain.RifeFactorDenominator ?? 1);
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_model", RifeLabelToValue(chain.RifeModel));
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_ensemble", chain.RifeEnsemble);
-                parser.SetValue(section, $"chain_{chain.ChainNumber}_rife_scene_detect_threshold", $"{chain.RifeSceneDetectThreshold ?? 0.015M}");
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife"), chain.EnableRife ? "yes" : "no");
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_factor_numerator"), chain.RifeFactorNumerator ?? 0);
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_factor_denominator"), chain.RifeFactorDenominator ?? 1);
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_model"), RifeLabelToValue(chain.RifeModel));
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_ensemble"), chain.RifeEnsemble);
+                parser.SetValue(section, string.Create(ENGLISH_CULTURE, $"chain_{chain.ChainNumber}_rife_scene_detect_threshold"), $"{chain.RifeSceneDetectThreshold ?? 0.015M}");
             }
 
             return parser;
