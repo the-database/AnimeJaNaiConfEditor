@@ -90,10 +90,10 @@
               <StackPanel>
                 <StackPanel Orientation="Horizontal" IsVisible="{Binding IsSelectedMpvProfile}">
                   <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
-                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195" FontWeight="Bold">
-                    <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" />
+                  <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" Width="15" Margin="8,0,0,0" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="172" FontWeight="Bold">
                     <Run Text="{Binding ProfileName}"></Run>
-                    <TextBlock FontSize="11" VerticalAlignment="Center"> (Default)</TextBlock>
+                    <Run FontSize="11"> (Default)</Run>
                   </TextBlock>
                   <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Shift+{0}}" VerticalAlignment="Center"></TextBlock>
                 </StackPanel>
@@ -127,10 +127,10 @@
               <StackPanel>
                 <StackPanel Orientation="Horizontal" IsVisible="{Binding IsSelectedMpvProfile}">
                   <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
-                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="195" FontWeight="Bold">
-                    <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" />
+                  <materialIcons:MaterialIcon Kind="Star" VerticalAlignment="Center" Width="15" Margin="8,0,0,0" />
+                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Width="172" FontWeight="Bold">
                     <Run Text="{Binding ProfileName}"></Run>
-                    <TextBlock FontSize="11" VerticalAlignment="Center"> (Default)</TextBlock>
+                    <Run FontSize="11"> (Default)</Run>
                   </TextBlock>
                   <TextBlock FontSize="10" FontFamily="Consolas" Text="{Binding SlotNumber, StringFormat=Ctrl+{0}}" VerticalAlignment="Center"></TextBlock>
                 </StackPanel>
