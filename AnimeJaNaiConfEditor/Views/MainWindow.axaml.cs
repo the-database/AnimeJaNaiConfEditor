@@ -8,7 +8,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Avalonia.ReactiveUI;
+using ReactiveUI.Avalonia;
 using FluentAvalonia.UI.Controls;
 using FluentAvalonia.UI.Windowing;
 using Material.Icons.Avalonia;
