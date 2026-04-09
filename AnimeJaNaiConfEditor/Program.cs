@@ -19,6 +19,6 @@ namespace AnimeJaNaiConfEditor
                 .UsePlatformDetect()
                 .WithInterFont()
                 .LogToTrace()
-                .UseReactiveUI();
+                .UseReactiveUI(_ => { });
     }
 }

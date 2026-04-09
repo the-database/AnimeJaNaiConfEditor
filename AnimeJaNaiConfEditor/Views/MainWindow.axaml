@@ -187,6 +187,39 @@
 <Bold>NCNN</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but typically slower than DirectML. Supports fp32 ONNX models only.
   </TextBlock>
             </StackPanel>
+
+            <StackPanel IsVisible="{Binding AnimeJaNaiConf.TensorRtSelected}" Margin="10,0,0,10">
+              <TextBlock FontWeight="Bold" Margin="0,0,0,5">TensorRT Engine Settings</TextBlock>
+
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Precision</TextBlock>
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtFp16Selected}" Content="fp16" Command="{Binding AnimeJaNaiConf.SetTrtFp16}" />
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtBf16Selected}" Content="bf16" Command="{Binding AnimeJaNaiConf.SetTrtBf16}" />
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStronglyTypedSelected}" Content="stronglyTyped" Command="{Binding AnimeJaNaiConf.SetTrtStronglyTyped}" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Engine Type</TextBlock>
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStaticOnnxSelected}" Content="Static ONNX" Command="{Binding AnimeJaNaiConf.SetTrtStaticOnnx}" />
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStaticSelected}" Content="Static" Command="{Binding AnimeJaNaiConf.SetTrtStatic}" />
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtDynamicSelected}" Content="Dynamic" Command="{Binding AnimeJaNaiConf.SetTrtDynamic}" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,5" IsVisible="{Binding AnimeJaNaiConf.TrtDynamicSelected}">
+                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Min Resolution</TextBlock>
+                <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicMinResolution, Mode=TwoWay}"
+                               ItemsSource="{Binding CommonResolutions}" />
+                <TextBlock Margin="10,0,5,0" VerticalAlignment="Center">Opt Resolution</TextBlock>
+                <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicOptResolution, Mode=TwoWay}"
+                               ItemsSource="{Binding CommonResolutions}" />
+                <TextBlock Margin="10,0,5,0" VerticalAlignment="Center">Max Resolution</TextBlock>
+                <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicMaxResolution, Mode=TwoWay}"
+                               ItemsSource="{Binding CommonResolutions}" />
+              </StackPanel>
+
+              <TextBox Text="{Binding AnimeJaNaiConf.TrtEngineSettings}" Width="800" HorizontalAlignment="Left" />
+            </StackPanel>
+
           </StackPanel>
           <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
             <Button Margin="10,0,10,0" Click="ImportFullConfButtonClick">

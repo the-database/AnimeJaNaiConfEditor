@@ -488,6 +488,9 @@ chain_2_rife=no";
                 }
             }
 
+            animeJaNaiConf.TrtEngineSettings = parser.GetValue("global", "trt_engine_settings",
+                "--stronglyTyped --optShapes=input:%video_resolution% --inputIOFormats=fp16:chw --outputIOFormats=fp16:chw --builderOptimizationLevel=5 --tacticSources=-CUDNN,-CUBLAS,-CUBLAS_LT --skipInference");
+
             foreach (var section in parser.Sections)
             {
                 if (section.SectionName != "global")
@@ -719,6 +722,7 @@ chain_2_rife=no";
 
             parser.SetValue("global", "backend", conf.SelectedBackend.ToString());
             parser.SetValue("global", "logging", conf.EnableLogging ? "yes" : "no");
+            parser.SetValue("global", "trt_engine_settings", conf.TrtEngineSettings);
 
             foreach (var profile in conf.UpscaleSlots)
             {
@@ -951,10 +955,12 @@ chain_2_rife=no";
                     x => x.EnableLogging,
                     x => x.TensorRtSelected,
                     x => x.DirectMlSelected,
-                    x => x.NcnnSelected).Subscribe(x =>
+                    x => x.NcnnSelected,
+                    x => x.TrtEngineSettings).Subscribe(x =>
                     {
                         Vm?.WriteAnimeJaNaiConf();
                     });
+
             }
         }
 
@@ -1004,6 +1010,145 @@ chain_2_rife=no";
             {
                 this.RaiseAndSetIfChanged(ref _ncnnSelected, value);
             }
+        }
+
+        private string _trtEngineSettings = "--stronglyTyped --optShapes=input:%video_resolution% --inputIOFormats=fp16:chw --outputIOFormats=fp16:chw --builderOptimizationLevel=5 --tacticSources=-CUDNN,-CUBLAS,-CUBLAS_LT --skipInference";
+        [DataMember]
+        public string TrtEngineSettings
+        {
+            get => _trtEngineSettings;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _trtEngineSettings, value);
+                this.RaisePropertyChanged(nameof(TrtFp16Selected));
+                this.RaisePropertyChanged(nameof(TrtBf16Selected));
+                this.RaisePropertyChanged(nameof(TrtStronglyTypedSelected));
+                this.RaisePropertyChanged(nameof(TrtStaticOnnxSelected));
+                this.RaisePropertyChanged(nameof(TrtStaticSelected));
+                this.RaisePropertyChanged(nameof(TrtDynamicSelected));
+                this.RaisePropertyChanged(nameof(TrtDynamicMinResolution));
+                this.RaisePropertyChanged(nameof(TrtDynamicOptResolution));
+                this.RaisePropertyChanged(nameof(TrtDynamicMaxResolution));
+            }
+        }
+
+        public bool TrtFp16Selected => TrtEngineSettings.Contains("--fp16");
+        public bool TrtBf16Selected => TrtEngineSettings.Contains("--bf16");
+        public bool TrtStronglyTypedSelected => TrtEngineSettings.Contains("--stronglyTyped");
+        public bool TrtDynamicSelected => TrtEngineSettings.Contains("--minShapes=");
+        public bool TrtStaticSelected => TrtEngineSettings.Contains("--optShapes=") && !TrtDynamicSelected;
+        public bool TrtStaticOnnxSelected => !TrtEngineSettings.Contains("--optShapes=") && !TrtDynamicSelected;
+
+        private static string ShapeToResolution(string shapeArg)
+        {
+            var match = Regex.Match(shapeArg, @"input:1x3x(\d+)x(\d+)");
+            if (match.Success)
+                return $"{match.Groups[2].Value}x{match.Groups[1].Value}";
+            return "0x0";
+        }
+
+        private static string ResolutionToShape(string resolution)
+        {
+            var match = Regex.Match(resolution, @"(\d+)x(\d+)");
+            if (match.Success)
+                return $"1x3x{match.Groups[2].Value}x{match.Groups[1].Value}";
+            return "1x3x0x0";
+        }
+
+        private static string? ExtractShapeValue(string settings, string prefix)
+        {
+            var match = Regex.Match(settings, prefix + @"=(\S+)");
+            return match.Success ? match.Groups[1].Value : null;
+        }
+
+        public string TrtDynamicMinResolution
+        {
+            get
+            {
+                var val = ExtractShapeValue(TrtEngineSettings, "--minShapes");
+                return val != null ? ShapeToResolution(val) : "8x8";
+            }
+            set
+            {
+                var shape = ResolutionToShape(value);
+                TrtEngineSettings = Regex.Replace(TrtEngineSettings, @"--minShapes=\S+", $"--minShapes=input:{shape}");
+            }
+        }
+
+        public string TrtDynamicOptResolution
+        {
+            get
+            {
+                if (!TrtDynamicSelected) return "1920x1080";
+                var val = ExtractShapeValue(TrtEngineSettings, "--optShapes");
+                return val != null ? ShapeToResolution(val) : "1920x1080";
+            }
+            set
+            {
+                var shape = ResolutionToShape(value);
+                if (TrtDynamicSelected)
+                    TrtEngineSettings = Regex.Replace(TrtEngineSettings, @"--optShapes=\S+", $"--optShapes=input:{shape}");
+            }
+        }
+
+        public string TrtDynamicMaxResolution
+        {
+            get
+            {
+                var val = ExtractShapeValue(TrtEngineSettings, "--maxShapes");
+                return val != null ? ShapeToResolution(val) : "1920x1080";
+            }
+            set
+            {
+                var shape = ResolutionToShape(value);
+                TrtEngineSettings = Regex.Replace(TrtEngineSettings, @"--maxShapes=\S+", $"--maxShapes=input:{shape}");
+            }
+        }
+
+        private static string RemoveShapeArgs(string settings)
+        {
+            var result = Regex.Replace(settings, @"\s*--(?:min|opt|max)Shapes=\S+", "");
+            return Regex.Replace(result, @"\s+", " ").Trim();
+        }
+
+        private static string InsertBeforeTactics(string settings, string toInsert)
+        {
+            var idx = settings.IndexOf("--tacticSources");
+            if (idx >= 0)
+                return settings.Insert(idx, toInsert + " ");
+            return settings + " " + toInsert;
+        }
+
+        public void SetTrtFp16()
+        {
+            TrtEngineSettings = TrtEngineSettings.Replace("--bf16", "--fp16").Replace("--stronglyTyped", "--fp16");
+        }
+
+        public void SetTrtBf16()
+        {
+            TrtEngineSettings = TrtEngineSettings.Replace("--fp16", "--bf16").Replace("--stronglyTyped", "--bf16");
+        }
+
+        public void SetTrtStronglyTyped()
+        {
+            TrtEngineSettings = TrtEngineSettings.Replace("--fp16", "--stronglyTyped").Replace("--bf16", "--stronglyTyped");
+        }
+
+        public void SetTrtStaticOnnx()
+        {
+            TrtEngineSettings = RemoveShapeArgs(TrtEngineSettings);
+        }
+
+        public void SetTrtStatic()
+        {
+            var settings = RemoveShapeArgs(TrtEngineSettings);
+            TrtEngineSettings = InsertBeforeTactics(settings, "--optShapes=input:%video_resolution%");
+        }
+
+        public void SetTrtDynamic()
+        {
+            var settings = RemoveShapeArgs(TrtEngineSettings);
+            TrtEngineSettings = InsertBeforeTactics(settings, "--minShapes=input:1x3x8x8 --optShapes=input:1x3x1080x1920 --maxShapes=input:1x3x1080x1920");
         }
 
         private AvaloniaList<UpscaleSlot> _upscaleSlots = [];
