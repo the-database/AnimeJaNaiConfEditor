@@ -217,6 +217,13 @@
                                ItemsSource="{Binding CommonResolutions}" />
               </StackPanel>
 
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Builder Optimization Level</TextBlock>
+                <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtBuilderOptimizationLevel, Mode=TwoWay}"
+                               ItemsSource="{Binding BuilderOptimizationLevels}" />
+                <TextBlock Opacity=".5" Width="700" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Higher levels (0-5) take longer to build the engine but can produce a faster engine. Default is 5.</TextBlock>
+              </StackPanel>
+
               <TextBox Text="{Binding AnimeJaNaiConf.TrtEngineSettings}" Width="800" HorizontalAlignment="Left" />
             </StackPanel>
 

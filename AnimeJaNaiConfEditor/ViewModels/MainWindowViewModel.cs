@@ -61,6 +61,8 @@ namespace AnimeJaNaiConfEditor.ViewModels
             set => this.RaiseAndSetIfChanged(ref _commonResolutions, value);
         }
 
+        public string[] BuilderOptimizationLevels { get; } = ["0", "1", "2", "3", "4", "5"];
+
         private static readonly string DEFAULT_PROFILES_CONF = @"[slot_1]
 profile_name=Quality
 chain_1_min_resolution=1280x720
@@ -1029,6 +1031,7 @@ chain_2_rife=no";
                 this.RaisePropertyChanged(nameof(TrtDynamicMinResolution));
                 this.RaisePropertyChanged(nameof(TrtDynamicOptResolution));
                 this.RaisePropertyChanged(nameof(TrtDynamicMaxResolution));
+                this.RaisePropertyChanged(nameof(TrtBuilderOptimizationLevel));
             }
         }
 
@@ -1102,6 +1105,24 @@ chain_2_rife=no";
             {
                 var shape = ResolutionToShape(value);
                 TrtEngineSettings = Regex.Replace(TrtEngineSettings, @"--maxShapes=\S+", $"--maxShapes=input:{shape}");
+            }
+        }
+
+        public string TrtBuilderOptimizationLevel
+        {
+            get
+            {
+                var match = Regex.Match(TrtEngineSettings, @"--builderOptimizationLevel=(\d+)");
+                return match.Success ? match.Groups[1].Value : "5";
+            }
+            set
+            {
+                var match = Regex.Match(value ?? "", @"\d+");
+                var level = match.Success ? match.Value : "5";
+                if (Regex.IsMatch(TrtEngineSettings, @"--builderOptimizationLevel=\d+"))
+                    TrtEngineSettings = Regex.Replace(TrtEngineSettings, @"--builderOptimizationLevel=\d+", $"--builderOptimizationLevel={level}");
+                else
+                    TrtEngineSettings = InsertBeforeTactics(TrtEngineSettings, $"--builderOptimizationLevel={level}");
             }
         }
 
