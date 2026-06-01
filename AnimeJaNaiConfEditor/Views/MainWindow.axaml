@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:AnimeJaNaiConfEditor.ViewModels"
+        xmlns:local="using:AnimeJaNaiConfEditor"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:hypertext="clr-namespace:HyperText.Avalonia.Controls;assembly=HyperText.Avalonia"
@@ -9,10 +10,15 @@
         xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
         mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
         WindowStartupLocation="CenterScreen"
+        MinWidth="760" MinHeight="460"
         x:Class="AnimeJaNaiConfEditor.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/logo.ico"
         Title="AnimeJaNaiConfEditor">
+
+  <Window.Resources>
+    <local:HelpTextConverter x:Key="HelpText" />
+  </Window.Resources>
 
   <Window.Styles>
     <Style Selector="TextBlock">
@@ -20,6 +26,22 @@
     </Style>
     <Style Selector="TextBox">
       <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="TextBlock.help">
+      <Setter Property="Opacity" Value="0.5" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="MaxLines" Value="2" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="ToolTip.Tip" Value="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource HelpText}}" />
+    </Style>
+    <!-- MaxLines/TextTrimming/TextWrapping inherit (inherits:true); reset them on the tooltip
+         popup so the full help text shows untruncated even though the .help block is capped. -->
+    <Style Selector="ToolTip">
+      <Setter Property="TextBlock.MaxLines" Value="0" />
+      <Setter Property="TextBlock.TextTrimming" Value="None" />
+      <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="Border.border">
       <Setter Property="Margin" Value="0,10,0,0" />
@@ -65,11 +87,12 @@
 
 
   <Grid ColumnDefinitions="300,*" RowDefinitions="*">
-    <StackPanel Grid.Column="0" Background="#33000000">
+    <ScrollViewer Grid.Column="0" Background="#33000000" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel>
       <TextBlock Margin="0">
 
       </TextBlock>
-      <Button Width="300" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}" Classes.active="{Binding ShowGlobalSettings}" HorizontalContentAlignment="Left" ClickMode="Press">
+      <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" Command="{Binding HandleShowGlobalSettings}" Classes.active="{Binding ShowGlobalSettings}" HorizontalContentAlignment="Left" ClickMode="Press">
         <StackPanel Orientation="Horizontal" >
           <materialIcons:MaterialIcon Kind="Gear" VerticalAlignment="Center" />
           <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Global Settings</TextBlock>
@@ -82,7 +105,7 @@
       <ItemsControl ItemsSource="{Binding DefaultUpscaleSlots}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:UpscaleSlot">
-            <Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}"
+            <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}"
                     Classes.active="{Binding ActiveSlot}"
                     Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowDefaultProfile}"
                     CommandParameter="{Binding SlotNumber}"
@@ -119,7 +142,7 @@
       <ItemsControl ItemsSource="{Binding AnimeJaNaiConf.UpscaleSlots}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:UpscaleSlot">
-            <Button Width="300" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}"
+            <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" IsVisible="{Binding ShowSlot}"
                     Classes.active="{Binding ActiveSlot}"
                     Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).HandleShowCustomProfile}"
                     CommandParameter="{Binding SlotNumber}"
@@ -150,7 +173,7 @@
       <TextBlock Margin="10">
         Tools
       </TextBlock>
-      <Button Width="300" FontSize="13" Padding="10" Command="{Binding LaunchBenchmark}" HorizontalContentAlignment="Left">
+      <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" Command="{Binding LaunchBenchmark}" HorizontalContentAlignment="Left">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
             <materialIcons:MaterialIcon Kind="Finance" VerticalAlignment="Center" />
@@ -162,73 +185,88 @@
         </StackPanel>
       </Button>
     </StackPanel>
+    </ScrollViewer>
 
-    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" >
+    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" >
       <StackPanel Margin="20">
       
         <!-- Global Settings -->
-        <Grid IsVisible="{Binding ShowGlobalSettings}">
-          <StackPanel Grid.Column="0">
-            <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-              <CheckBox  IsChecked="{Binding AnimeJaNaiConf.EnableLogging}" Content="Enable Logging" />
-              <TextBlock Opacity=".5" Width="560" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">
+        <Grid IsVisible="{Binding ShowGlobalSettings}" RowDefinitions="Auto,*">
+          <StackPanel Grid.Row="1">
+            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+              <CheckBox Grid.Column="0" IsChecked="{Binding AnimeJaNaiConf.EnableLogging}" Content="Enable Logging" />
+              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">
                 Enable logging to view which models are being used and which resolutions they are scaling from.
                 The log file is created at <Run FontFamily="Consolas">animejanai.log</Run> in the same directory as this config editor.
               </TextBlock>
-            </StackPanel>
+            </Grid>
 
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,10,0,10">
-              <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Upscaling Backend</TextBlock>
-              <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TensorRtSelected}" Content="TensorRT" Command="{Binding AnimeJaNaiConf.SetTensorRtSelected}" />
-              <ToggleButton IsChecked="{Binding AnimeJaNaiConf.DirectMlSelected}" Content="DirectML" Command="{Binding AnimeJaNaiConf.SetDirectMlSelected}" />
-              <ToggleButton IsChecked="{Binding AnimeJaNaiConf.NcnnSelected}" Content="NCNN" Command="{Binding AnimeJaNaiConf.SetNcnnSelected}" />
-              <TextBlock Opacity=".5" Width="900" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="40,0,0,0" xml:space="preserve"><Bold>TensorRT</Bold>: Fastest option but NVIDIA only. Supports fp16 and fp32 ONNX models. fp16 models are recommended for faster performance and reduced VRAM usage without any loss in quality. The initial engine generation may require several minutes but only needs to be done once.
+            <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="10,10,0,10">
+              <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Upscaling Backend</TextBlock>
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TensorRtSelected}" Content="TensorRT" Command="{Binding AnimeJaNaiConf.SetTensorRtSelected}" />
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.DirectMlSelected}" Content="DirectML" Command="{Binding AnimeJaNaiConf.SetDirectMlSelected}" />
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.NcnnSelected}" Content="NCNN" Command="{Binding AnimeJaNaiConf.SetNcnnSelected}" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Classes="help" Margin="40,0,0,0" xml:space="preserve"><Bold>TensorRT</Bold>: Fastest option but NVIDIA only. Supports fp16 and fp32 ONNX models. fp16 models are recommended for faster performance and reduced VRAM usage without any loss in quality. The initial engine generation may require several minutes but only needs to be done once.
 <Bold>DirectML</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but slower than TensorRT. Supports fp32 ONNX models only.
 <Bold>NCNN</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but typically slower than DirectML. Supports fp32 ONNX models only.
   </TextBlock>
-            </StackPanel>
+            </Grid>
 
             <StackPanel IsVisible="{Binding AnimeJaNaiConf.TensorRtSelected}" Margin="10,0,0,10">
-              <TextBlock FontWeight="Bold" Margin="0,0,0,5">TensorRT Engine Settings</TextBlock>
+              <TextBlock Margin="0,10,0,5" Text="TensorRT Engine Settings" />
+              <Border Classes="border">
+                <StackPanel Margin="10">
 
-              <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Precision</TextBlock>
-                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtFp16Selected}" Content="fp16" Command="{Binding AnimeJaNaiConf.SetTrtFp16}" />
-                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtBf16Selected}" Content="bf16" Command="{Binding AnimeJaNaiConf.SetTrtBf16}" />
-                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStronglyTypedSelected}" Content="stronglyTyped" Command="{Binding AnimeJaNaiConf.SetTrtStronglyTyped}" />
-              </StackPanel>
+                  <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,5">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                      <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Precision</TextBlock>
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtFp16Selected}" Content="fp16" Command="{Binding AnimeJaNaiConf.SetTrtFp16}" />
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtBf16Selected}" Content="bf16" Command="{Binding AnimeJaNaiConf.SetTrtBf16}" />
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStronglyTypedSelected}" Content="stronglyTyped" Command="{Binding AnimeJaNaiConf.SetTrtStronglyTyped}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0" xml:space="preserve"><Bold>stronglyTyped</Bold> uses the precision defined within the ONNX model and is recommended. <Bold>fp16</Bold> and <Bold>bf16</Bold> force 16-bit precision for faster performance and lower VRAM usage.</TextBlock>
+                  </Grid>
 
-              <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Engine Type</TextBlock>
-                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStaticOnnxSelected}" Content="Static ONNX" Command="{Binding AnimeJaNaiConf.SetTrtStaticOnnx}" />
-                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStaticSelected}" Content="Static" Command="{Binding AnimeJaNaiConf.SetTrtStatic}" />
-                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtDynamicSelected}" Content="Dynamic" Command="{Binding AnimeJaNaiConf.SetTrtDynamic}" />
-              </StackPanel>
+                  <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,5">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                      <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Engine Type</TextBlock>
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStaticOnnxSelected}" Content="Static ONNX" Command="{Binding AnimeJaNaiConf.SetTrtStaticOnnx}" />
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStaticSelected}" Content="Static" Command="{Binding AnimeJaNaiConf.SetTrtStatic}" />
+                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtDynamicSelected}" Content="Dynamic" Command="{Binding AnimeJaNaiConf.SetTrtDynamic}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0" xml:space="preserve">Which input resolutions the engine is built for. <Bold>Static ONNX</Bold> uses the ONNX model's shape. <Bold>Static</Bold> builds for a single resolution and rebuilds when it changes. <Bold>Dynamic</Bold> builds one engine for the resolution range specified below.</TextBlock>
+                  </Grid>
 
-              <StackPanel Orientation="Horizontal" Margin="0,0,0,5" IsVisible="{Binding AnimeJaNaiConf.TrtDynamicSelected}">
-                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Min Resolution</TextBlock>
-                <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicMinResolution, Mode=TwoWay}"
-                               ItemsSource="{Binding CommonResolutions}" />
-                <TextBlock Margin="10,0,5,0" VerticalAlignment="Center">Opt Resolution</TextBlock>
-                <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicOptResolution, Mode=TwoWay}"
-                               ItemsSource="{Binding CommonResolutions}" />
-                <TextBlock Margin="10,0,5,0" VerticalAlignment="Center">Max Resolution</TextBlock>
-                <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicMaxResolution, Mode=TwoWay}"
-                               ItemsSource="{Binding CommonResolutions}" />
-              </StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,5" IsVisible="{Binding AnimeJaNaiConf.TrtDynamicSelected}">
+                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Min Resolution</TextBlock>
+                    <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicMinResolution, Mode=TwoWay}"
+                                   ItemsSource="{Binding CommonResolutions}" />
+                    <TextBlock Margin="10,0,5,0" VerticalAlignment="Center">Opt Resolution</TextBlock>
+                    <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicOptResolution, Mode=TwoWay}"
+                                   ItemsSource="{Binding CommonResolutions}" />
+                    <TextBlock Margin="10,0,5,0" VerticalAlignment="Center">Max Resolution</TextBlock>
+                    <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtDynamicMaxResolution, Mode=TwoWay}"
+                                   ItemsSource="{Binding CommonResolutions}" />
+                  </StackPanel>
 
-              <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Builder Optimization Level</TextBlock>
-                <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtBuilderOptimizationLevel, Mode=TwoWay}"
-                               ItemsSource="{Binding BuilderOptimizationLevels}" />
-                <TextBlock Opacity=".5" Width="700" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Higher levels (0-5) take longer to build the engine but can produce a faster engine. Default is 5.</TextBlock>
-              </StackPanel>
+                  <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,5">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                      <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Builder Optimization Level</TextBlock>
+                      <ui:FAComboBox IsEditable="True" Width="120" MaxDropDownHeight="600" Text="{Binding AnimeJaNaiConf.TrtBuilderOptimizationLevel, Mode=TwoWay}"
+                                     ItemsSource="{Binding BuilderOptimizationLevels}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Higher levels (0-5) take longer to build the engine but can produce a faster engine. Default is 5.</TextBlock>
+                  </Grid>
 
-              <TextBox Text="{Binding AnimeJaNaiConf.TrtEngineSettings}" Width="800" HorizontalAlignment="Left" />
+                  <TextBox Text="{Binding AnimeJaNaiConf.TrtEngineSettings}" MaxWidth="800" HorizontalAlignment="Stretch" />
+                </StackPanel>
+              </Border>
             </StackPanel>
 
           </StackPanel>
-          <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
+          <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top">
             <Button Margin="10,0,10,0" Click="ImportFullConfButtonClick">
               <StackPanel Orientation="Horizontal">
                 <materialIcons:MaterialIcon Kind="Import" VerticalAlignment="Center" />
@@ -246,17 +284,21 @@
         <!-- Default Profile Settings -->
         <StackPanel IsVisible="{Binding ShowDefaultProfiles}">
           <StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-              <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Profile Name</TextBlock>
-              <TextBox Width="500" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="True" IsEnabled="False" />
-            </StackPanel>
+            <Grid Margin="10,10,0,10">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MaxWidth="500" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Margin="0,0,5,0" VerticalAlignment="Center">Profile Name</TextBlock>
+              <TextBox Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="True" IsEnabled="False" />
+            </Grid>
 
-            <StackPanel Orientation="Horizontal" Margin="10,10,0,10" IsVisible="{Binding MpvConfDetected}">
-              <Button Classes="transparent" Command="{Binding SelectDefaultProfile}">
+            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding MpvConfDetected}">
+              <Button Grid.Column="0" Classes="transparent" Command="{Binding SelectDefaultProfile}">
                 <CheckBox IsChecked="{Binding CurrentSlot.IsSelectedMpvProfile}" Content="Set as Default Profile in mpv" IsHitTestVisible="False" />
               </Button>
-              <TextBlock FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">Use this profile by default when launching mpv.</TextBlock>
-            </StackPanel>
+              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Use this profile by default when launching mpv.</TextBlock>
+            </Grid>
 
             <ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
               <ItemsControl.ItemTemplate>
@@ -273,29 +315,33 @@
                           <TextBlock Margin="10,10,0,5" Text="Activation Condition" />
                           <Border Classes="border">
                             <StackPanel>
-                              <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resolution Range</TextBlock>
-                                <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MinResolution, Mode=TwoWay}"
-                                               ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
-                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resolution Range</TextBlock>
+                                  <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MinResolution, Mode=TwoWay}"
+                                                 ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
 
-                                <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
-                                <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}"
-                                               ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
-                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale. A maximum resolution of 0x0 means that the chain will run on all video resolutions.</TextBlock>
-                              </StackPanel>
+                                  <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
+                                  <ui:FAComboBox IsEnabled="False" IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}"
+                                                 ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale. A maximum resolution of 0x0 means that the chain will run on all video resolutions.</TextBlock>
+                              </Grid>
 
-                              <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">FPS Range</TextBlock>
-                                <ui:NumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MinFps}" Minimum="0" Maximum="999" Width="80" />
-                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
+                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">FPS Range</TextBlock>
+                                  <ui:NumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MinFps}" Minimum="0" Maximum="999" Width="80" />
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
 
-                                <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
-                                <ui:NumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
-                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
-                                <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale. A maximum fps of 0 means the chain will run on all video fps.</TextBlock>
-                              </StackPanel>
+                                  <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
+                                  <ui:NumberBox IsEnabled="False" Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
+                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale. A maximum fps of 0 means the chain will run on all video fps.</TextBlock>
+                              </Grid>
                             </StackPanel>
 
                           </Border>
@@ -311,31 +357,41 @@
                                       <Border Classes="border">
                                         <Grid>
                                           <StackPanel Grid.Column="0">
-                                            <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                              <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
-                                              <TextBox Margin="0,0,5,0" Text="{Binding ResizeHeightBeforeUpscale}" IsReadOnly="True" IsEnabled="False" />
-                                              <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                              <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable. Downscaling the video improves performance; for most sources downscaling reduces quality but some blurry sources may see improved sharpness with the right amount of downscaling.</TextBlock>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                              <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
-                                              <TextBox Margin="0,0,5,0" Text="{Binding ResizeFactorBeforeUpscale}" IsReadOnly="True" IsEnabled="False" />
-                                              <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">%</TextBlock>
-                                              <TextBlock Opacity=".5" Width="800" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">
+                                            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                              <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
+                                                <TextBox Margin="0,0,5,0" Text="{Binding ResizeHeightBeforeUpscale}" IsReadOnly="True" IsEnabled="False" />
+                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                              </StackPanel>
+                                              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable. Downscaling the video improves performance; for most sources downscaling reduces quality but some blurry sources may see improved sharpness with the right amount of downscaling.</TextBlock>
+                                            </Grid>
+                                            <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                              <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
+                                                <TextBox Margin="0,0,5,0" Text="{Binding ResizeFactorBeforeUpscale}" IsReadOnly="True" IsEnabled="False" />
+                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">%</TextBlock>
+                                              </StackPanel>
+                                              <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">
                                                 Resize the video by this factor before running this model. The video width and height are scaled by this percentage, so a value of 100% performs no resize, and a value of 50% cuts the width and height of the video in half. This setting is ignored if Resize Height Before Upscale is specified.
                                               </TextBlock>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                              <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
-                                              <ComboBox ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" Width="400" IsEnabled="False" />
-                                              <Button Margin="5,0,0,0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenModelsDirectory}">
+                                            </Grid>
+                                            <Grid Margin="10,10,0,10">
+                                              <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" MaxWidth="400" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                              </Grid.ColumnDefinitions>
+                                              <TextBlock Grid.Column="0" Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
+                                              <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" IsEnabled="False" />
+                                              <Button Grid.Column="2" Margin="5,0,0,0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenModelsDirectory}">
                                                 <StackPanel Orientation="Horizontal">
                                                   <materialIcons:MaterialIcon Kind="Launch" />
                                                   <TextBlock Margin="5,0,0,0" Text="Open Models Directory" />
                                                 </StackPanel>
                                               </Button>
-                                              <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">The upscaling model to run. To choose from more models, add ONNX model files to the models directory.</TextBlock>
-                                            </StackPanel>
+                                              <TextBlock Grid.Column="3" Classes="help" Margin="20,0,0,0">The upscaling model to run. To choose from more models, add ONNX model files to the models directory.</TextBlock>
+                                            </Grid>
                                           </StackPanel>
                                         </Grid>
                                       </Border>
@@ -344,10 +400,10 @@
                                 </ItemsControl.ItemTemplate>
                               </ItemsControl>
 
-                              <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
-                                <CheckBox IsChecked="{Binding EnableRife}" Content="Enable RIFE Interpolation" IsEnabled="False" />
-                                <TextBlock FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">Whether or not to run RIFE video frame interpolation.</TextBlock>
-                              </StackPanel>
+                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" >
+                                <CheckBox Grid.Column="0" IsChecked="{Binding EnableRife}" Content="Enable RIFE Interpolation" IsEnabled="False" />
+                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Whether or not to run RIFE video frame interpolation.</TextBlock>
+                              </Grid>
 
                             </StackPanel>
 
@@ -370,23 +426,69 @@
         </StackPanel>
 
         <!-- Custom Profile Settings -->
-        <Grid IsVisible="{Binding ShowCustomProfiles}">
-          <StackPanel Grid.Column="0">
-            <StackPanel>
-              <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Profile Name</TextBlock>
-                <TextBox Width="500" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="False" />
-              </StackPanel>
+        <Grid IsVisible="{Binding ShowCustomProfiles}" RowDefinitions="Auto,*">
+          <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0">
+              <Grid Margin="10,10,0,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" MaxWidth="500" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Margin="0,0,5,0" VerticalAlignment="Center">Profile Name</TextBlock>
+                <TextBox Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,5,0" Text="{Binding CurrentSlot.ProfileName}" IsReadOnly="False" />
+              </Grid>
 
 
-              <StackPanel Orientation="Horizontal" Margin="10,10,0,10" IsVisible="{Binding MpvConfDetected}">
-                <Button Classes="transparent" Command="{Binding SelectDefaultProfile}">
+              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding MpvConfDetected}">
+                <Button Grid.Column="0" Classes="transparent" Command="{Binding SelectDefaultProfile}">
                   <CheckBox IsChecked="{Binding CurrentSlot.IsSelectedMpvProfile}" Content="Set as Default Profile in mpv" IsHitTestVisible="False" />
                 </Button>
-                <TextBlock FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">Use this profile by default when launching mpv.</TextBlock>
+                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Use this profile by default when launching mpv.</TextBlock>
+              </Grid>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:FAComboBox Margin="10,0,0,0" ItemsSource="{Binding AllSlots}" SelectedItem="{Binding SelectedProfileToClone}">
+                  <ui:FAComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:UpscaleSlot">
+                      <StackPanel Orientation="Horizontal">
+                        <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
+                        <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">
+                          <Run Text="{Binding ProfileName}" />
+                        </TextBlock>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ui:FAComboBox.ItemTemplate>
+                </ui:FAComboBox>
+
+                <Button Margin="0,0,10,0" Click="CloneSelectedProfileToCurrentProfile">
+                  <StackPanel Orientation="Horizontal">
+                    <materialIcons:MaterialIcon Kind="ContentDuplicate" VerticalAlignment="Center" />
+                    <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Copy Selected Profile To Current Profile</TextBlock>
+                  </StackPanel>
+                </Button>
               </StackPanel>
 
+              <StackPanel Margin="0,10,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
 
+                <Button Margin="10,0,10,0" Click="ImportCurrentProfileConfButtonClick">
+                  <StackPanel Orientation="Horizontal">
+                    <materialIcons:MaterialIcon Kind="Import" VerticalAlignment="Center" />
+                    <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Import Profile Config From File</TextBlock>
+                  </StackPanel>
+                </Button>
+                <Button Margin="10,0,10,0" Click="ExportCurrentProfileConfButtonClick">
+                  <StackPanel Orientation="Horizontal">
+                    <materialIcons:MaterialIcon Kind="Export" VerticalAlignment="Center" />
+                    <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Export Profile Config To File</TextBlock>
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+            </StackPanel>
+          </Grid>
+
+          <StackPanel Grid.Row="1">
               <ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:UpscaleChain">
@@ -394,37 +496,41 @@
 
                       <TextBlock Margin="10,10,0,10" Text="{Binding ChainNumber, StringFormat=Chain {0}}"  />
                       <Border Classes="border" Margin="0,0,0,20">
-                        <Grid>
+                        <Grid RowDefinitions="Auto,*">
 
 
-                          <StackPanel Grid.Column="0">
+                          <StackPanel Grid.Row="1">
 
                             <TextBlock Margin="10,10,0,5" Text="Activation Condition" />
                             <Border Classes="border">
                               <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resolution Range</TextBlock>
-                                  <ui:FAComboBox IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MinResolution, Mode=TwoWay}"
-                                                 ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resolution Range</TextBlock>
+                                    <ui:FAComboBox IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MinResolution, Mode=TwoWay}"
+                                                   ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
 
-                                  <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
-                                  <ui:FAComboBox IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}"
-                                                 ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                  <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale. A maximum resolution of 0x0 means that the chain will run on all video resolutions.</TextBlock>
-                                </StackPanel>
+                                    <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
+                                    <ui:FAComboBox IsEditable="True" Width="120"  MaxDropDownHeight="600" Text="{Binding MaxResolution, Mode=TwoWay}"
+                                                   ItemsSource="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).CommonResolutions}" />
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Range of video resolutions to activate this chain. Select a common resolution from the drop down or type a custom resolution. Larger resolutions require more processing power to upscale. A maximum resolution of 0x0 means that the chain will run on all video resolutions.</TextBlock>
+                                </Grid>
 
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">FPS Range</TextBlock>
-                                  <ui:NumberBox Margin="0,0,5,0" Value="{Binding MinFps}" Minimum="0" Maximum="999" Width="80" />
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">FPS Range</TextBlock>
+                                    <ui:NumberBox Margin="0,0,5,0" Value="{Binding MinFps}" Minimum="0" Maximum="999" Width="80" />
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
 
-                                  <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
-                                  <ui:NumberBox Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
-                                  <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale. A maximum fps of 0 means the chain will run on all video fps.</TextBlock>
-                                </StackPanel>
+                                    <TextBlock Margin="10,0,20,0" VerticalAlignment="Center"> - </TextBlock>
+                                    <ui:NumberBox Margin="0,0,5,0" Value="{Binding MaxFps}" Minimum="0" Maximum="999" Width="80" />
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">fps</TextBlock>
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Range of video fps (frames per second) to activate this chain. Higher fps videos require more processing power to upscale. A maximum fps of 0 means the chain will run on all video fps.</TextBlock>
+                                </Grid>
                               </StackPanel>
 
                             </Border>
@@ -441,36 +547,46 @@
                                       <StackPanel>
                                         <TextBlock Margin="10,20,10,0" Text="{Binding ModelNumber, StringFormat=Model {0}}" />
                                         <Border Classes="border">
-                                          <Grid>
-                                            <StackPanel Grid.Column="0">
-                                              <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
-                                                <ui:NumberBox Margin="0,0,5,0" Maximum="1080" Minimum="0" Value="{Binding ResizeHeightBeforeUpscale}" />
-                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
-                                                <TextBlock Width="800" TextWrapping="WrapWithOverflow" Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable. Downscaling the video improves performance; for most sources downscaling reduces quality but some blurry sources may see improved sharpness with the right amount of downscaling.</TextBlock>
-                                              </StackPanel>
-                                              <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
-                                                <ui:NumberBox Margin="0,0,5,0" Maximum="100" Minimum="0" Value="{Binding ResizeFactorBeforeUpscale}" IsEnabled="{Binding ResizeFactorBeforeUpscaleIsEnabled}" />
-                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">%</TextBlock>
-                                                <TextBlock Opacity=".5" Width="800" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">
+                                          <Grid RowDefinitions="Auto,*">
+                                            <StackPanel Grid.Row="1">
+                                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Height Before Upscale</TextBlock>
+                                                  <ui:NumberBox Margin="0,0,5,0" Maximum="1080" Minimum="0" Value="{Binding ResizeHeightBeforeUpscale}" />
+                                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">px</TextBlock>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Resize the video to this height before running this model, set to 0 to disable. Downscaling the video improves performance; for most sources downscaling reduces quality but some blurry sources may see improved sharpness with the right amount of downscaling.</TextBlock>
+                                              </Grid>
+                                              <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10">
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Resize Factor Before Upscale</TextBlock>
+                                                  <ui:NumberBox Margin="0,0,5,0" Maximum="100" Minimum="0" Value="{Binding ResizeFactorBeforeUpscale}" IsEnabled="{Binding ResizeFactorBeforeUpscaleIsEnabled}" />
+                                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">%</TextBlock>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">
                                                   Resize the video by this factor before running this model. The video width and height are scaled by this percentage, so a value of 100% performs no resize, and a value of 50% cuts the width and height of the video in half. This setting is ignored if Resize Height Before Upscale is specified.
                                                 </TextBlock>
-                                              </StackPanel>
-                                              <StackPanel Orientation="Horizontal" Margin="10,10,0,10">
-                                                <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
-                                                <ComboBox ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}" Width="400"></ComboBox>
-                                                <Button Margin="5,0,0,0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenModelsDirectory}">
+                                              </Grid>
+                                              <Grid Margin="10,10,0,10">
+                                                <Grid.ColumnDefinitions>
+                                                  <ColumnDefinition Width="Auto" />
+                                                  <ColumnDefinition Width="*" MaxWidth="400" />
+                                                  <ColumnDefinition Width="Auto" />
+                                                  <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Margin="0,0,5,0" VerticalAlignment="Center">Model</TextBlock>
+                                                <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding AllModels}" SelectedValue="{Binding Name}"></ComboBox>
+                                                <Button Grid.Column="2" Margin="5,0,0,0" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenModelsDirectory}">
                                                   <StackPanel Orientation="Horizontal">
                                                     <materialIcons:MaterialIcon Kind="Launch" />
                                                     <TextBlock Margin="5,0,0,0" Text="Open Models Directory" />
                                                   </StackPanel>
                                                 </Button>
-                                                <TextBlock Opacity=".5" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0">The upscaling model to run. To choose from more models, add ONNX model files to the models directory.</TextBlock>
-                                              </StackPanel>
+                                                <TextBlock Grid.Column="3" Classes="help" Margin="20,0,0,0">The upscaling model to run. To choose from more models, add ONNX model files to the models directory.</TextBlock>
+                                              </Grid>
                                             </StackPanel>
 
-                                            <Button Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding $parent[ItemsControl].((vm:UpscaleChain)DataContext).DeleteModel}" CommandParameter="{Binding}">
+                                            <Button Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding $parent[ItemsControl].((vm:UpscaleChain)DataContext).DeleteModel}" CommandParameter="{Binding}">
                                               <StackPanel Orientation="Horizontal">
                                                 <materialIcons:MaterialIcon Kind="MinusCircle" />
                                                 <TextBlock Margin="5,0,0,0" Text="{Binding ModelNumber, StringFormat=Remove Model {0}}" />
@@ -490,35 +606,41 @@
                                   </StackPanel>
                                 </Button>
 
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" >
-                                  <CheckBox IsChecked="{Binding EnableRife}" Content="Enable RIFE Interpolation" />
-                                  <TextBlock FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">Whether or not to run RIFE video frame interpolation.</TextBlock>
-                                </StackPanel>
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" >
+                                  <CheckBox Grid.Column="0" IsChecked="{Binding EnableRife}" Content="Enable RIFE Interpolation" />
+                                  <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Whether or not to run RIFE video frame interpolation.</TextBlock>
+                                </Grid>
 
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Interpolation Factor" />
-                                  <NumericUpDown Value="{Binding RifeFactorNumerator}" Minimum="{Binding RifeFactorDenominator}" FormatString="0" />
-                                  <TextBlock xml:space="preserve"> / </TextBlock>
-                                  <NumericUpDown Value="{Binding RifeFactorDenominator}" Minimum="1" Maximum="{Binding RifeFactorNumerator}" FormatString="0" />
-                                  <TextBlock Foreground="Gray" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0" Text="Interpolation factor represented as a fraction. For example, 2 / 1 will double the framerate." />
-                                </StackPanel>
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Interpolation Factor" />
+                                    <NumericUpDown Value="{Binding RifeFactorNumerator}" Minimum="{Binding RifeFactorDenominator}" FormatString="0" />
+                                    <TextBlock xml:space="preserve"> / </TextBlock>
+                                    <NumericUpDown Value="{Binding RifeFactorDenominator}" Minimum="1" Maximum="{Binding RifeFactorNumerator}" FormatString="0" />
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="Interpolation factor represented as a fraction. For example, 2 / 1 will double the framerate." />
+                                </Grid>
 
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Model" />
-                                  <ComboBox Margin="0,0,5,0" VerticalAlignment="Center" SelectedValue="{Binding RifeModel}" ItemsSource="{Binding RifeModelList}" />
-                                  <TextBlock Foreground="Gray" Width="800" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0" Text="Interpolation model to run. Higher RIFE version is newer and usually better quality." />
-                                </StackPanel>
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Model" />
+                                    <ComboBox Margin="0,0,5,0" VerticalAlignment="Center" SelectedValue="{Binding RifeModel}" ItemsSource="{Binding RifeModelList}" />
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="Interpolation model to run. Higher RIFE version is newer and usually better quality." />
+                                </Grid>
 
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
-                                  <CheckBox IsChecked="{Binding RifeEnsemble}" Content="Ensemble" />
-                                  <TextBlock Foreground="Gray" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0" Text="Whether or not to use the ensemble version of the model, which improves quality but runs slower." />
-                                </StackPanel>
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <CheckBox Grid.Column="0" IsChecked="{Binding RifeEnsemble}" Content="Ensemble" />
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="Whether or not to use the ensemble version of the model, which improves quality but runs slower." />
+                                </Grid>
 
-                                <StackPanel Orientation="Horizontal" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
-                                  <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Scene Detection Threshold" />
-                                  <NumericUpDown Value="{Binding RifeSceneDetectThreshold}" Minimum="0" FormatString="0.000" Maximum="1" Increment="0.05" />
-                                  <TextBlock Foreground="Gray" Width="900" TextWrapping="WrapWithOverflow" FontSize="12" VerticalAlignment="Center" Margin="20,0,0,0" Text="Scene detection is used to prevent interpolating frames during hard transitions between scenes. The threshold adjusts the sensitivity for what is considered a scene change. If the threshold is too high, more interpolation artifacts may be visible during scene transitions. If the threshold is too low, the video may stutter more." />
-                                </StackPanel>
+                                <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
+                                  <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,5,0" VerticalAlignment="Center" Text="Scene Detection Threshold" />
+                                    <NumericUpDown Value="{Binding RifeSceneDetectThreshold}" Minimum="0" FormatString="0.000" Maximum="1" Increment="0.05" />
+                                  </StackPanel>
+                                  <TextBlock Grid.Column="1" Classes="help" Foreground="Gray" Margin="20,0,0,0" Text="Scene detection is used to prevent interpolating frames during hard transitions between scenes. The threshold adjusts the sensitivity for what is considered a scene change. If the threshold is too high, more interpolation artifacts may be visible during scene transitions. If the threshold is too low, the video may stutter more." />
+                                </Grid>
 
                               </StackPanel>
 
@@ -527,7 +649,7 @@
 
                           </StackPanel>
 
-                          <Button Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).DeleteChain}" CommandParameter="{Binding}">
+                          <Button Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).DeleteChain}" CommandParameter="{Binding}">
                             <StackPanel Orientation="Horizontal">
                               <materialIcons:MaterialIcon Kind="MinusCircle" />
                               <TextBlock Margin="5,0,0,0" Text="{Binding ChainNumber, StringFormat=Remove Chain {0}}" />
@@ -541,58 +663,16 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
 
-              <StackPanel Orientation="Horizontal">
-                <Button Margin="10,20,0,20" Command="{Binding AddChain}">
+              <Grid ColumnDefinitions="Auto,*">
+                <Button Grid.Column="0" Margin="10,20,0,20" Command="{Binding AddChain}">
                   <StackPanel Orientation="Horizontal">
                     <materialIcons:MaterialIcon Kind="PlusCircle" />
                     <TextBlock Margin="5,0,0,0">Add Chain</TextBlock>
                   </StackPanel>
                 </Button>
-                <TextBlock Width="900" TextWrapping="WrapWithOverflow" FontSize="12" Opacity=".5" VerticalAlignment="Center" Margin="20,0,0,0">A chain is a a set of upscale settings which can be activated based on conditions such as the video resolution and fps. Videos with higher resolution and fps are more demanding to upscale, so setting up multiple chains allows you to select the most suitable model for each video type based on the capabilities of your hardware.</TextBlock>
-              </StackPanel>
+                <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">A chain is a a set of upscale settings which can be activated based on conditions such as the video resolution and fps. Videos with higher resolution and fps are more demanding to upscale, so setting up multiple chains allows you to select the most suitable model for each video type based on the capabilities of your hardware.</TextBlock>
+              </Grid>
 
-            </StackPanel>
-
-          </StackPanel>
-
-          <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-              <ui:FAComboBox Margin="10,0,0,0" ItemsSource="{Binding AllSlots}" SelectedItem="{Binding SelectedProfileToClone}">
-                <ui:FAComboBox.ItemTemplate>
-                  <DataTemplate x:DataType="vm:UpscaleSlot">
-                    <StackPanel Orientation="Horizontal">
-                      <materialIcons:MaterialIcon Kind="{Binding SlotIcon}" VerticalAlignment="Center" />
-                      <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">
-                        <Run Text="{Binding ProfileName}" />
-                      </TextBlock>
-                    </StackPanel>
-                  </DataTemplate>
-                </ui:FAComboBox.ItemTemplate>
-              </ui:FAComboBox>
-
-              <Button Margin="0,0,10,0" Click="CloneSelectedProfileToCurrentProfile">
-                <StackPanel Orientation="Horizontal">
-                  <materialIcons:MaterialIcon Kind="ContentDuplicate" VerticalAlignment="Center" />
-                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Copy Selected Profile To Current Profile</TextBlock>
-                </StackPanel>
-              </Button>
-            </StackPanel>
-
-            <StackPanel Margin="0,10,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
-
-              <Button Margin="10,0,10,0" Click="ImportCurrentProfileConfButtonClick">
-                <StackPanel Orientation="Horizontal">
-                  <materialIcons:MaterialIcon Kind="Import" VerticalAlignment="Center" />
-                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Import Profile Config From File</TextBlock>
-                </StackPanel>
-              </Button>
-              <Button Margin="10,0,10,0" Click="ExportCurrentProfileConfButtonClick">
-                <StackPanel Orientation="Horizontal">
-                  <materialIcons:MaterialIcon Kind="Export" VerticalAlignment="Center" />
-                  <TextBlock Margin="10,0,10,0" VerticalAlignment="Center">Export Profile Config To File</TextBlock>
-                </StackPanel>
-              </Button>
-            </StackPanel>
           </StackPanel>
 
         </Grid>

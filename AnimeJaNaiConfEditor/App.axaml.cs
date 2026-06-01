@@ -1,6 +1,7 @@
 using AnimeJaNaiConfEditor.ViewModels;
 using AnimeJaNaiConfEditor.Views;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using ReactiveUI.Avalonia;
@@ -26,9 +27,29 @@ namespace AnimeJaNaiConfEditor
                 {
                     DataContext = new MainWindowViewModel(),
                 };
+
+                // When another launch (e.g. a repeated Ctrl+E from mpv) signals this instance,
+                // bring the existing window to the front instead of opening a new one.
+                Program.ActivationRequested += () => BringToFront(desktop.MainWindow);
             }
 
             base.OnFrameworkInitializationCompleted();
+        }
+
+        private static void BringToFront(Window? window)
+        {
+            if (window is null)
+            {
+                return;
+            }
+
+            if (window.WindowState == WindowState.Minimized)
+            {
+                window.WindowState = WindowState.Normal;
+            }
+
+            window.Show();
+            window.Activate();
         }
     }
 }
