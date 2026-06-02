@@ -39,36 +39,73 @@ namespace AnimeJaNaiConfEditor.ViewModels
             InitializeSelectedSlot();
         }
 
-        // Rebuilds the read-only default profiles from DEFAULT_PROFILES_CONF, swapping the HD models
-        // to their V3.1Sharp1 variants when the sharp preset is selected. Standard and sharp HD model
+        // Rebuilds the read-only default profiles from DEFAULT_PROFILES_CONF, swapping each profile's
+        // HD models to their V3.1Sharp1 variants per its own preset. Standard and sharp HD model
         // filenames differ only by the _HD_V3.1_ vs _HD_V3.1Sharp1_ token (the SD model has none).
         public void RefreshDefaultProfiles()
         {
-            var conf = AnimeJaNaiConf?.SharpPresetSelected == true
-                ? DEFAULT_PROFILES_CONF.Replace("_HD_V3.1_", "_HD_V3.1Sharp1_")
-                : DEFAULT_PROFILES_CONF;
-            DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(conf)).UpscaleSlots;
+            DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(DEFAULT_PROFILES_CONF)).UpscaleSlots;
             DefaultUpscaleSlots[0].MpvProfileName = "upscale-on-quality";
             DefaultUpscaleSlots[1].MpvProfileName = "upscale-on-balanced";
             DefaultUpscaleSlots[2].MpvProfileName = "upscale-on-performance";
             DefaultUpscaleSlots[0].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 4090";
             DefaultUpscaleSlots[1].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3080";
             DefaultUpscaleSlots[2].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3060";
+            if (AnimeJaNaiConf != null)
+            {
+                ApplySharp(DefaultUpscaleSlots[0], AnimeJaNaiConf.QualitySharp);
+                ApplySharp(DefaultUpscaleSlots[1], AnimeJaNaiConf.BalancedSharp);
+                ApplySharp(DefaultUpscaleSlots[2], AnimeJaNaiConf.PerformanceSharp);
+            }
             this.RaisePropertyChanged(nameof(CurrentSlot));
+            this.RaisePropertyChanged(nameof(CurrentDefaultStandardSelected));
+            this.RaisePropertyChanged(nameof(CurrentDefaultSharpSelected));
         }
 
-        // Bound to the Standard/Sharp toggle in the default-profiles view: update the preset (which
-        // auto-saves to [global] default_preset) and refresh the read-only display.
-        public void UseStandardPreset()
+        private static void ApplySharp(UpscaleSlot slot, bool sharp)
         {
-            AnimeJaNaiConf.SetStandardPreset();
-            RefreshDefaultProfiles();
+            if (!sharp)
+            {
+                return;
+            }
+            foreach (var chain in slot.Chains)
+            {
+                foreach (var model in chain.Models)
+                {
+                    if (model.Name != null && model.Name.Contains("_HD_V3.1_"))
+                    {
+                        model.Name = model.Name.Replace("_HD_V3.1_", "_HD_V3.1Sharp1_");
+                    }
+                }
+            }
         }
 
-        public void UseSharpPreset()
+        // The Standard/Sharp toggle in the default-profiles view applies to whichever default profile
+        // is currently shown (CurrentSlot). These map slot 1/2/3 -> Quality/Balanced/Performance.
+        private bool CurrentDefaultSharpValue() => CurrentSlot?.SlotNumber switch
         {
-            AnimeJaNaiConf.SetSharpPreset();
-            RefreshDefaultProfiles();
+            "1" => AnimeJaNaiConf?.QualitySharp ?? false,
+            "2" => AnimeJaNaiConf?.BalancedSharp ?? false,
+            "3" => AnimeJaNaiConf?.PerformanceSharp ?? false,
+            _ => false,
+        };
+
+        public bool CurrentDefaultSharpSelected => CurrentDefaultSharpValue();
+        public bool CurrentDefaultStandardSelected => !CurrentDefaultSharpValue();
+
+        public void SetCurrentDefaultStandard() => SetCurrentDefaultPreset(false);
+        public void SetCurrentDefaultSharp() => SetCurrentDefaultPreset(true);
+
+        private void SetCurrentDefaultPreset(bool sharp)
+        {
+            switch (CurrentSlot?.SlotNumber)
+            {
+                case "1": AnimeJaNaiConf.QualitySharp = sharp; break;
+                case "2": AnimeJaNaiConf.BalancedSharp = sharp; break;
+                case "3": AnimeJaNaiConf.PerformanceSharp = sharp; break;
+                default: return;
+            }
+            RefreshDefaultProfiles(); // also raises the toggle props
         }
 
         private string[] _commonResolutions = [
@@ -206,6 +243,8 @@ chain_2_rife=no";
             {
                 this.RaiseAndSetIfChanged(ref _selectedSlotNumber, value);
                 this.RaisePropertyChanged(nameof(CurrentSlot));
+                this.RaisePropertyChanged(nameof(CurrentDefaultStandardSelected));
+                this.RaisePropertyChanged(nameof(CurrentDefaultSharpSelected));
             }
         }
 
@@ -541,15 +580,11 @@ chain_2_rife=no";
                 ? DEFAULT_TRT_ENGINE_SETTINGS
                 : trtEngineSettings;
 
-            if (parser.GetValue("global", "default_preset", "standard").Trim()
-                    .Equals("sharp", StringComparison.OrdinalIgnoreCase))
-            {
-                animeJaNaiConf.SetSharpPreset();
-            }
-            else
-            {
-                animeJaNaiConf.SetStandardPreset();
-            }
+            bool IsSharp(string key) => parser.GetValue("global", key, "standard").Trim()
+                .Equals("sharp", StringComparison.OrdinalIgnoreCase);
+            animeJaNaiConf.QualitySharp = IsSharp("quality_preset");
+            animeJaNaiConf.BalancedSharp = IsSharp("balanced_preset");
+            animeJaNaiConf.PerformanceSharp = IsSharp("performance_preset");
 
             foreach (var section in parser.Sections)
             {
@@ -789,10 +824,18 @@ chain_2_rife=no";
             {
                 parser.SetValue("global", "trt_engine_settings", conf.TrtEngineSettings);
             }
-            // Write-minimal: only persist default_preset when sharp (absent => standard).
-            if (conf.SharpPresetSelected)
+            // Write-minimal: only persist a profile's preset when sharp (absent => standard).
+            if (conf.QualitySharp)
             {
-                parser.SetValue("global", "default_preset", "sharp");
+                parser.SetValue("global", "quality_preset", "sharp");
+            }
+            if (conf.BalancedSharp)
+            {
+                parser.SetValue("global", "balanced_preset", "sharp");
+            }
+            if (conf.PerformanceSharp)
+            {
+                parser.SetValue("global", "performance_preset", "sharp");
             }
 
             foreach (var profile in conf.UpscaleSlots)
@@ -1027,8 +1070,17 @@ chain_2_rife=no";
                     x => x.TensorRtSelected,
                     x => x.DirectMlSelected,
                     x => x.NcnnSelected,
-                    x => x.SharpPresetSelected,
                     x => x.TrtEngineSettings).Subscribe(x =>
+                    {
+                        Vm?.WriteAnimeJaNaiConf();
+                    });
+
+                // Separate subscription: WhenAnyValue's tuple overload doesn't extend to this many
+                // properties in one call.
+                this.WhenAnyValue(
+                    x => x.QualitySharp,
+                    x => x.BalancedSharp,
+                    x => x.PerformanceSharp).Subscribe(x =>
                     {
                         Vm?.WriteAnimeJaNaiConf();
                     });
@@ -1084,28 +1136,31 @@ chain_2_rife=no";
             }
         }
 
-        // Standard vs Sharp model preset for the built-in default profiles. Persisted as
-        // [global] default_preset and honored at playback by animejanai_config.py (slots 1001-1003).
-        private bool _standardPresetSelected = true;
+        // Per-profile Standard vs Sharp model selection for the three built-in default profiles.
+        // Persisted as [global] quality_preset / balanced_preset / performance_preset and honored at
+        // playback by animejanai_config.py (slots 1001/1002/1003). false => standard, true => sharp.
+        private bool _qualitySharp = false;
         [DataMember]
-        public bool StandardPresetSelected
+        public bool QualitySharp
         {
-            get => _standardPresetSelected;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _standardPresetSelected, value);
-            }
+            get => _qualitySharp;
+            set => this.RaiseAndSetIfChanged(ref _qualitySharp, value);
         }
 
-        private bool _sharpPresetSelected = false;
+        private bool _balancedSharp = false;
         [DataMember]
-        public bool SharpPresetSelected
+        public bool BalancedSharp
         {
-            get => _sharpPresetSelected;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _sharpPresetSelected, value);
-            }
+            get => _balancedSharp;
+            set => this.RaiseAndSetIfChanged(ref _balancedSharp, value);
+        }
+
+        private bool _performanceSharp = false;
+        [DataMember]
+        public bool PerformanceSharp
+        {
+            get => _performanceSharp;
+            set => this.RaiseAndSetIfChanged(ref _performanceSharp, value);
         }
 
         private string _trtEngineSettings = "--stronglyTyped --optShapes=input:%video_resolution% --inputIOFormats=fp16:chw --outputIOFormats=fp16:chw --builderOptimizationLevel=5 --tacticSources=-CUDNN,-CUBLAS,-CUBLAS_LT --skipInference";
@@ -1297,20 +1352,6 @@ chain_2_rife=no";
             NcnnSelected = true;
             TensorRtSelected = false;
             DirectMlSelected = false;
-        }
-
-        // Pure setters (no view-model callbacks) so re-parsing configs can't recurse. The view model
-        // drives the default-profiles display refresh; see MainWindowViewModel.UseStandardPreset.
-        public void SetStandardPreset()
-        {
-            StandardPresetSelected = true;
-            SharpPresetSelected = false;
-        }
-
-        public void SetSharpPreset()
-        {
-            SharpPresetSelected = true;
-            StandardPresetSelected = false;
         }
 
         public Backend SelectedBackend => TensorRtSelected ? Backend.TensorRT : DirectMlSelected ? Backend.DirectML : NcnnSelected ? Backend.NCNN : Backend.TensorRT;
