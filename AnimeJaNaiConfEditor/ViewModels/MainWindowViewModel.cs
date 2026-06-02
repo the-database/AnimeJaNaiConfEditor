@@ -21,14 +21,10 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public MainWindowViewModel()
         {
-            DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(DEFAULT_PROFILES_CONF)).UpscaleSlots;
-            DefaultUpscaleSlots[0].MpvProfileName = "upscale-on-quality";
-            DefaultUpscaleSlots[1].MpvProfileName = "upscale-on-balanced";
-            DefaultUpscaleSlots[2].MpvProfileName = "upscale-on-performance";
-            DefaultUpscaleSlots[0].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 4090";
-            DefaultUpscaleSlots[1].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3080";
-            DefaultUpscaleSlots[2].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3060";
             AnimeJaNaiConf = ReadAnimeJaNaiConf(AnimeJaNaiConfPath, true);
+            // Built after the user conf loads so the read-only default profiles reflect the saved
+            // standard/sharp preset.
+            RefreshDefaultProfiles();
 
 
             for (var i = 0; i < AnimeJaNaiConf.UpscaleSlots.Count; i++)
@@ -41,6 +37,38 @@ namespace AnimeJaNaiConfEditor.ViewModels
             SelectedMpvProfile = ReadCurrentProfileFromMpvConf();
 
             InitializeSelectedSlot();
+        }
+
+        // Rebuilds the read-only default profiles from DEFAULT_PROFILES_CONF, swapping the HD models
+        // to their V3.1Sharp1 variants when the sharp preset is selected. Standard and sharp HD model
+        // filenames differ only by the _HD_V3.1_ vs _HD_V3.1Sharp1_ token (the SD model has none).
+        public void RefreshDefaultProfiles()
+        {
+            var conf = AnimeJaNaiConf?.SharpPresetSelected == true
+                ? DEFAULT_PROFILES_CONF.Replace("_HD_V3.1_", "_HD_V3.1Sharp1_")
+                : DEFAULT_PROFILES_CONF;
+            DefaultUpscaleSlots = ReadAnimeJaNaiConf(new ConfigParser(conf)).UpscaleSlots;
+            DefaultUpscaleSlots[0].MpvProfileName = "upscale-on-quality";
+            DefaultUpscaleSlots[1].MpvProfileName = "upscale-on-balanced";
+            DefaultUpscaleSlots[2].MpvProfileName = "upscale-on-performance";
+            DefaultUpscaleSlots[0].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 4090";
+            DefaultUpscaleSlots[1].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3080";
+            DefaultUpscaleSlots[2].DescriptionText = "Minimum Suggested GPU: NVIDIA RTX 3060";
+            this.RaisePropertyChanged(nameof(CurrentSlot));
+        }
+
+        // Bound to the Standard/Sharp toggle in the default-profiles view: update the preset (which
+        // auto-saves to [global] default_preset) and refresh the read-only display.
+        public void UseStandardPreset()
+        {
+            AnimeJaNaiConf.SetStandardPreset();
+            RefreshDefaultProfiles();
+        }
+
+        public void UseSharpPreset()
+        {
+            AnimeJaNaiConf.SetSharpPreset();
+            RefreshDefaultProfiles();
         }
 
         private string[] _commonResolutions = [
@@ -71,7 +99,7 @@ chain_1_min_fps=0
 chain_1_max_fps=31
 chain_1_model_1_resize_height_before_upscale=0
 chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_HD_V3_Compact
+chain_1_model_1_name=2x_AnimeJaNai_HD_V3.1_Balanced_SPANF3_b8f64_unshuffle_fp16
 chain_1_rife=no
 chain_2_min_resolution=0x0
 chain_2_max_resolution=1280x720
@@ -79,7 +107,7 @@ chain_2_min_fps=0
 chain_2_max_fps=31
 chain_2_model_1_resize_height_before_upscale=0
 chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact
+chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op23_dynamo
 chain_2_rife=no
 chain_3_min_resolution=0x0
 chain_3_max_resolution=1920x1080
@@ -87,7 +115,7 @@ chain_3_min_fps=0
 chain_3_max_fps=61
 chain_3_model_1_resize_height_before_upscale=0
 chain_3_model_1_resize_factor_before_upscale=100
-chain_3_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
+chain_3_model_1_name=2x_AnimeJaNai_HD_V3.1_Balanced_SPANF3_b8f64_unshuffle_fp16
 chain_3_rife=no
 [slot_2]
 profile_name=Balanced
@@ -97,7 +125,7 @@ chain_1_min_fps=0
 chain_1_max_fps=31
 chain_1_model_1_resize_height_before_upscale=0
 chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_HD_V3_UltraCompact
+chain_1_model_1_name=2x_AnimeJaNai_HD_V3.1_Balanced_SPANF3_b8f64_unshuffle_fp16
 chain_1_rife=no
 chain_2_min_resolution=0x0
 chain_2_max_resolution=1280x720
@@ -105,7 +133,7 @@ chain_2_min_fps=0
 chain_2_max_fps=31
 chain_2_model_1_resize_height_before_upscale=0
 chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact
+chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op23_dynamo
 chain_2_rife=no
 [slot_3]
 profile_name=Performance
@@ -115,7 +143,7 @@ chain_1_min_fps=0
 chain_1_max_fps=31
 chain_1_model_1_resize_height_before_upscale=0
 chain_1_model_1_resize_factor_before_upscale=100
-chain_1_model_1_name=2x_AnimeJaNai_HD_V3_SuperUltraCompact
+chain_1_model_1_name=2x_AnimeJaNai_HD_V3.1_Performance_SPANF3_b5f48_unshuffle_fp16
 chain_1_rife=no
 chain_2_min_resolution=0x0
 chain_2_max_resolution=1280x720
@@ -123,7 +151,7 @@ chain_2_min_fps=0
 chain_2_max_fps=31
 chain_2_model_1_resize_height_before_upscale=0
 chain_2_model_1_resize_factor_before_upscale=100
-chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact
+chain_2_model_1_name=2x_AnimeJaNai_SD_V1beta34_Compact_1x3xHxW_dyn-HW_strong_fp16_op23_dynamo
 chain_2_rife=no";
 
         public string ExePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
@@ -467,6 +495,16 @@ chain_2_rife=no";
             return ReadAnimeJaNaiConf(new ConfigParser(fullPath), autoSave);
         }
 
+        // Keep CONFIG_VERSION, the current default, and the historical-defaults set in sync with
+        // animejanai_config.py in the mpv-upscale-2x_animejanai repo.
+        private const int CONFIG_VERSION = 2;
+        private const string DEFAULT_TRT_ENGINE_SETTINGS =
+            "--stronglyTyped --optShapes=input:%video_resolution% --inputIOFormats=fp16:chw --outputIOFormats=fp16:chw --builderOptimizationLevel=5 --tacticSources=-CUDNN,-CUBLAS,-CUBLAS_LT --skipInference";
+        private static readonly HashSet<string> LEGACY_DEFAULT_TRT_ENGINE_SETTINGS = new()
+        {
+            DEFAULT_TRT_ENGINE_SETTINGS,
+        };
+
         public AnimeJaNaiConf ReadAnimeJaNaiConf(ConfigParser parser, bool autoSave = false)
         {
             var animeJaNaiConf = new AnimeJaNaiConf(autoSave) { Vm = this };
@@ -490,8 +528,28 @@ chain_2_rife=no";
                 }
             }
 
-            animeJaNaiConf.TrtEngineSettings = parser.GetValue("global", "trt_engine_settings",
-                "--stronglyTyped --optShapes=input:%video_resolution% --inputIOFormats=fp16:chw --outputIOFormats=fp16:chw --builderOptimizationLevel=5 --tacticSources=-CUDNN,-CUBLAS,-CUBLAS_LT --skipInference");
+            // config_version drives migrations (absent => 1, the pre-versioning schema).
+            int.TryParse(parser.GetValue("global", "config_version", "1"), out var configVersion);
+            var trtEngineSettings = parser.GetValue("global", "trt_engine_settings", "");
+            // v1 -> v2: drop a trt_engine_settings value that is just an old shipped default so the
+            // current default applies; a genuinely customized value is kept.
+            if (configVersion < 2 && LEGACY_DEFAULT_TRT_ENGINE_SETTINGS.Contains(trtEngineSettings))
+            {
+                trtEngineSettings = "";
+            }
+            animeJaNaiConf.TrtEngineSettings = string.IsNullOrEmpty(trtEngineSettings)
+                ? DEFAULT_TRT_ENGINE_SETTINGS
+                : trtEngineSettings;
+
+            if (parser.GetValue("global", "default_preset", "standard").Trim()
+                    .Equals("sharp", StringComparison.OrdinalIgnoreCase))
+            {
+                animeJaNaiConf.SetSharpPreset();
+            }
+            else
+            {
+                animeJaNaiConf.SetStandardPreset();
+            }
 
             foreach (var section in parser.Sections)
             {
@@ -722,9 +780,20 @@ chain_2_rife=no";
 
             var parser = new ConfigParser();
 
+            parser.SetValue("global", "config_version", CONFIG_VERSION.ToString());
             parser.SetValue("global", "backend", conf.SelectedBackend.ToString());
             parser.SetValue("global", "logging", conf.EnableLogging ? "yes" : "no");
-            parser.SetValue("global", "trt_engine_settings", conf.TrtEngineSettings);
+            // Write-minimal: only persist trt_engine_settings when it differs from the current
+            // default, so future default changes apply automatically to users who didn't customize.
+            if (conf.TrtEngineSettings != DEFAULT_TRT_ENGINE_SETTINGS)
+            {
+                parser.SetValue("global", "trt_engine_settings", conf.TrtEngineSettings);
+            }
+            // Write-minimal: only persist default_preset when sharp (absent => standard).
+            if (conf.SharpPresetSelected)
+            {
+                parser.SetValue("global", "default_preset", "sharp");
+            }
 
             foreach (var profile in conf.UpscaleSlots)
             {
@@ -958,6 +1027,7 @@ chain_2_rife=no";
                     x => x.TensorRtSelected,
                     x => x.DirectMlSelected,
                     x => x.NcnnSelected,
+                    x => x.SharpPresetSelected,
                     x => x.TrtEngineSettings).Subscribe(x =>
                     {
                         Vm?.WriteAnimeJaNaiConf();
@@ -1011,6 +1081,30 @@ chain_2_rife=no";
             set
             {
                 this.RaiseAndSetIfChanged(ref _ncnnSelected, value);
+            }
+        }
+
+        // Standard vs Sharp model preset for the built-in default profiles. Persisted as
+        // [global] default_preset and honored at playback by animejanai_config.py (slots 1001-1003).
+        private bool _standardPresetSelected = true;
+        [DataMember]
+        public bool StandardPresetSelected
+        {
+            get => _standardPresetSelected;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _standardPresetSelected, value);
+            }
+        }
+
+        private bool _sharpPresetSelected = false;
+        [DataMember]
+        public bool SharpPresetSelected
+        {
+            get => _sharpPresetSelected;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _sharpPresetSelected, value);
             }
         }
 
@@ -1203,6 +1297,20 @@ chain_2_rife=no";
             NcnnSelected = true;
             TensorRtSelected = false;
             DirectMlSelected = false;
+        }
+
+        // Pure setters (no view-model callbacks) so re-parsing configs can't recurse. The view model
+        // drives the default-profiles display refresh; see MainWindowViewModel.UseStandardPreset.
+        public void SetStandardPreset()
+        {
+            StandardPresetSelected = true;
+            SharpPresetSelected = false;
+        }
+
+        public void SetSharpPreset()
+        {
+            SharpPresetSelected = true;
+            StandardPresetSelected = false;
         }
 
         public Backend SelectedBackend => TensorRtSelected ? Backend.TensorRT : DirectMlSelected ? Backend.DirectML : NcnnSelected ? Backend.NCNN : Backend.TensorRT;
