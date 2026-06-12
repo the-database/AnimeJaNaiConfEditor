@@ -18,6 +18,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
         public long Bytes { get; init; }
         public bool Installed { get; init; }
         public bool Recommended { get; init; }
+        public bool Preselect { get; init; }
 
         private bool _selected;
         public bool Selected
@@ -29,7 +30,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
         public string SizeText => $"{Bytes / 1048576:N0} MB";
 
         public string StateText => Installed ? "installed"
-            : Recommended ? "recommended for this PC" : "not installed";
+            : Recommended ? "recommended for this PC" : "optional";
 
         public string Title => Name switch
         {
@@ -44,7 +45,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
         {
             "trt-runtime" => "The fastest upscaling engine, for NVIDIA GPUs. Without it, NVIDIA users fall back to the slower DirectML engine.",
             "rife" => "Frame interpolation (e.g. 24 → 48 fps). Not needed if you only upscale.",
-            "trt-ptx" => "Fallback kernels for GPU generations without their own pack below. First engine build is slower.",
+            "trt-ptx" => "Fallback kernels for NVIDIA GPUs without a dedicated kernel pack. First engine build is slower.",
             _ when Name.StartsWith("trt-sm") => "Engine-builder kernels matched to this GPU generation. Only needed on these GPUs.",
             _ => "",
         };
@@ -144,18 +145,31 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 Packs.Clear();
                 foreach (var e in root.GetProperty("packs").EnumerateArray())
                 {
+                    bool installed = e.GetProperty("installed").GetBoolean();
+                    bool recommended = e.GetProperty("recommended").GetBoolean();
                     var item = new ComponentItem
                     {
                         Name = e.GetProperty("name").GetString() ?? "",
                         Bytes = e.GetProperty("bytes").GetInt64(),
-                        Installed = e.GetProperty("installed").GetBoolean(),
-                        Recommended = e.GetProperty("recommended").GetBoolean(),
+                        Installed = installed,
+                        Recommended = recommended,
+                        Preselect = e.TryGetProperty("preselect", out var pre)
+                            ? pre.GetBoolean() : installed || recommended,
                     };
-                    item.Selected = item.Installed || item.Recommended;
+                    // Only what this machine uses (recommended), has (installed, so a
+                    // full install can be slimmed), or can choose (rife). Kernel packs
+                    // for other GPU generations and the TensorRT stack on non-NVIDIA
+                    // boxes are irrelevant here; the updater CLI still lists everything.
+                    if (!item.Installed && !item.Recommended && !item.Preselect &&
+                        item.Name != "rife")
+                    {
+                        continue;
+                    }
+                    item.Selected = item.Preselect;
                     Packs.Add(item);
                 }
 
-                SetupNeeded = Packs.Any(p => p.Recommended && !p.Installed);
+                SetupNeeded = Packs.Any(p => p.Preselect && !p.Installed);
                 string? mismatch = root.TryGetProperty("version_mismatch", out var mm)
                     ? mm.GetString() : null;
                 StatusLine = mismatch is not null

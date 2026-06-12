@@ -699,10 +699,10 @@
       <StackPanel Margin="24" Spacing="12" MaxWidth="820" HorizontalAlignment="Left">
         <TextBlock Text="{Binding ComponentManager.GpuText}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
         <Border Classes="border" IsVisible="{Binding ComponentManager.SetupNeeded}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <materialIcons:MaterialIcon Kind="AlertCircleOutline" Width="20" Height="20" Foreground="Orange"/>
-            <TextBlock TextWrapping="Wrap" Text="Recommended components for this PC are not installed yet. They are pre-checked below — uncheck anything you don't want, then click Apply changes."/>
-          </StackPanel>
+          <Grid ColumnDefinitions="Auto,*">
+            <materialIcons:MaterialIcon Grid.Column="0" Kind="AlertCircleOutline" Width="20" Height="20" Foreground="Orange" VerticalAlignment="Top" Margin="0,2,8,0"/>
+            <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="This PC is missing components it can use. They are pre-checked below — uncheck anything you don't want, then click Apply changes."/>
+          </Grid>
         </Border>
         <ItemsControl ItemsSource="{Binding ComponentManager.Packs}" IsEnabled="{Binding ComponentManager.NotBusy}">
           <ItemsControl.ItemTemplate>
