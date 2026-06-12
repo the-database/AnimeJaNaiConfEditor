@@ -663,6 +663,17 @@ chain_2_rife=no";
             DEFAULT_TRT_ENGINE_SETTINGS,
         };
 
+        // Hand-edited confs can leave numeric keys empty; the native filter reads
+        // empty as 0, but a non-numeric string must never reach a NumberBox binding
+        // (InvalidCastException converting '' to double).
+        private static string NumericOr(ConfigParser parser, string section, string key, string fallback = "0")
+        {
+            var value = parser.GetValue(section, key);
+            return string.IsNullOrWhiteSpace(value) ||
+                   !double.TryParse(value, System.Globalization.NumberStyles.Float, ENGLISH_CULTURE, out _)
+                ? fallback : value;
+        }
+
         public AnimeJaNaiConf ReadAnimeJaNaiConf(ConfigParser parser, bool autoSave = false)
         {
             var animeJaNaiConf = new AnimeJaNaiConf(autoSave) { Vm = this };
@@ -726,8 +737,8 @@ chain_2_rife=no";
                                 ChainNumber = currentChainNumber,
                                 MinResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_resolution"),
                                 MaxResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_resolution"),
-                                MinFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_fps"),
-                                MaxFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_fps"),
+                                MinFps = NumericOr(parser, section.SectionName, $"chain_{currentChainNumber}_min_fps"),
+                                MaxFps = NumericOr(parser, section.SectionName, $"chain_{currentChainNumber}_max_fps"),
                                 EnableRife = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife")),
                                 //RifeModel = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_model"),
                                 RifeEnsemble = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_ensemble")),
@@ -839,8 +850,8 @@ chain_2_rife=no";
                             ChainNumber = currentChainNumber,
                             MinResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_resolution"),
                             MaxResolution = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_resolution"),
-                            MinFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_min_fps"),
-                            MaxFps = parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_max_fps"),
+                            MinFps = NumericOr(parser, section.SectionName, $"chain_{currentChainNumber}_min_fps"),
+                            MaxFps = NumericOr(parser, section.SectionName, $"chain_{currentChainNumber}_max_fps"),
                             EnableRife = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife")),
                             RifeEnsemble = ParseBool(parser.GetValue(section.SectionName, $"chain_{currentChainNumber}_rife_ensemble")),
                         };
