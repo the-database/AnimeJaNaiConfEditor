@@ -92,20 +92,30 @@ namespace AnimeJaNaiConfEditor.ViewModels
             TrtSelectable = trtUsable;
 
             string notice = "";
-            if (!trtUsable)
+            if (trtUsable && AnimeJaNaiConf != null && AnimeJaNaiConf.DirectMlSelected &&
+                AnimeJaNaiConf.BackendAutoFallback)
+            {
+                // TensorRT is the natural path on NVIDIA: the DirectML selection was
+                // only our fallback, so installing TensorRT completes the setup
+                AnimeJaNaiConf.BackendAutoFallback = false;
+                AnimeJaNaiConf.SetTensorRtSelected();
+                notice = "TensorRT is installed — the backend has switched back to TensorRT.";
+            }
+            else if (!trtUsable)
             {
                 // a conf pointing at an unusable backend would only fail at playback;
                 // flip it to the engine that ships in every install and say so
                 string flipped = "";
                 if (AnimeJaNaiConf != null && AnimeJaNaiConf.TensorRtSelected)
                 {
+                    AnimeJaNaiConf.BackendAutoFallback = true;
                     AnimeJaNaiConf.SetDirectMlSelected();
                     flipped = "Switched to DirectML: ";
                 }
                 notice = nvidia == false
                     ? flipped + "TensorRT requires an NVIDIA GPU."
                     : ComponentManager.TrtPackAvailable
-                        ? flipped + "TensorRT is not installed — install it from the Components tab for the best performance on NVIDIA GPUs."
+                        ? flipped + "TensorRT is not installed — install it from the Components tab (recommended for NVIDIA GPUs); the backend switches back automatically once installed."
                         : flipped + "TensorRT is not installed.";
             }
             BackendNotice = notice;
@@ -680,6 +690,7 @@ chain_2_rife=no";
             var slots = new Dictionary<string, UpscaleSlot>();
 
             animeJaNaiConf.EnableLogging = ParseBool(parser.GetValue("global", "logging", "no"));
+            animeJaNaiConf.BackendAutoFallback = ParseBool(parser.GetValue("global", "backend_auto_fallback", "no"));
             if (Enum.TryParse(parser.GetValue("global", "backend", "TensorRT"), out Backend backend))
             {
                 switch (backend)
@@ -945,6 +956,7 @@ chain_2_rife=no";
 
             parser.SetValue("global", "config_version", CONFIG_VERSION.ToString());
             parser.SetValue("global", "backend", conf.SelectedBackend.ToString());
+            parser.SetValue("global", "backend_auto_fallback", conf.BackendAutoFallback ? "yes" : "no");
             parser.SetValue("global", "logging", conf.EnableLogging ? "yes" : "no");
             // Write-minimal: only persist trt_engine_settings when it differs from the current
             // default, so future default changes apply automatically to users who didn't customize.
@@ -1197,6 +1209,7 @@ chain_2_rife=no";
                     x => x.EnableLogging,
                     x => x.TensorRtSelected,
                     x => x.DirectMlSelected,
+                    x => x.BackendAutoFallback,
                     x => x.TrtEngineSettings).Subscribe(x =>
                     {
                         Vm?.WriteAnimeJaNaiConf();
@@ -1459,6 +1472,26 @@ chain_2_rife=no";
         {
             DirectMlSelected = true;
             TensorRtSelected = false;
+        }
+
+        public void UserSelectTensorRt()
+        {
+            BackendAutoFallback = false;
+            SetTensorRtSelected();
+        }
+
+        public void UserSelectDirectMl()
+        {
+            BackendAutoFallback = false;
+            SetDirectMlSelected();
+        }
+
+        private bool _backendAutoFallback;
+        [DataMember]
+        public bool BackendAutoFallback
+        {
+            get => _backendAutoFallback;
+            set => this.RaiseAndSetIfChanged(ref _backendAutoFallback, value);
         }
 
         public Backend SelectedBackend => DirectMlSelected ? Backend.DirectML : Backend.TensorRT;

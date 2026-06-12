@@ -152,7 +152,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 var gpu = root.GetProperty("gpu");
                 bool nvidia = gpu.GetProperty("nvidia").GetBoolean();
                 GpuText = nvidia
-                    ? $"GPU: {gpu.GetProperty("name").GetString()} — TensorRT recommended"
+                    ? $"GPU: {gpu.GetProperty("name").GetString()}"
                     : "GPU: no NVIDIA device detected — the built-in DirectML engine covers AMD and Intel GPUs";
                 GpuNvidia = nvidia;
 
