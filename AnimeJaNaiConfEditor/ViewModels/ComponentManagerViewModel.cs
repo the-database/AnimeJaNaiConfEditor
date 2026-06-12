@@ -2,6 +2,7 @@ using Avalonia.Collections;
 using Avalonia.Threading;
 using ReactiveUI;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -211,13 +212,27 @@ namespace AnimeJaNaiConfEditor.ViewModels
         // one, streaming the updater's progress output into the status line.
         public async void Apply()
         {
+            var toInstall = Packs.Where(p => p.Selected && !p.Installed).Select(p => p.Name).ToList();
+            var toRemove = Packs.Where(p => !p.Selected && p.Installed).Select(p => p.Name).ToList();
+            await RunChangesAsync(toInstall, toRemove);
+        }
+
+        // What the first-run dialog offers: the engine's preselect set (hardware
+        // recommendations, plus RIFE on installs that never managed components).
+        public List<ComponentItem> MissingPreselected =>
+            Packs.Where(p => p.Preselect && !p.Installed).ToList();
+
+        public async Task InstallMissingPreselectedAsync()
+        {
+            await RunChangesAsync(MissingPreselected.Select(p => p.Name).ToList(), []);
+        }
+
+        private async Task RunChangesAsync(List<string> toInstall, List<string> toRemove)
+        {
             if (IsBusy)
             {
                 return;
             }
-
-            var toInstall = Packs.Where(p => p.Selected && !p.Installed).Select(p => p.Name).ToList();
-            var toRemove = Packs.Where(p => !p.Selected && p.Installed).Select(p => p.Name).ToList();
             if (toInstall.Count == 0 && toRemove.Count == 0)
             {
                 StatusLine = "Nothing to change.";

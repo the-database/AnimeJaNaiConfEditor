@@ -140,14 +140,43 @@ namespace AnimeJaNaiConfEditor.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selectedTabIndex, value);
         }
 
-        // First-run guidance: if the hardware's recommended components are missing
-        // (fresh slim install, or a GPU change), open on the Components tab.
+        // First-run setup: if the hardware's recommended components are missing
+        // (fresh slim install, or a GPU change), open on the Components tab and
+        // offer to install everything in one click - new users won't read the
+        // tab, and 3.3.0 set the bar by shipping preconfigured.
         private async Task InitializeComponentManagerAsync()
         {
             await ComponentManager.RefreshAsync();
-            if (ComponentManager.SetupNeeded)
+            if (!ComponentManager.SetupNeeded)
             {
-                SelectedTabIndex = 1;
+                return;
+            }
+            SelectedTabIndex = 1;
+
+            var missing = ComponentManager.MissingPreselected;
+            var lines = string.Join("\n",
+                missing.Select(p => $"\u2022  {p.Title} \u2014 {p.SizeText}"));
+            long totalMb = missing.Sum(p => p.Bytes) / 1048576;
+            var dialog = new FluentAvalonia.UI.Controls.ContentDialog
+            {
+                Title = "Set up AnimeJaNai",
+                Content = $"Components recommended for this PC are not installed:\n\n{lines}\n\nDownload and install them now ({totalMb:N0} MB)?",
+                PrimaryButtonText = "Install",
+                CloseButtonText = "Not now",
+                DefaultButton = FluentAvalonia.UI.Controls.ContentDialogButton.Primary,
+            };
+            try
+            {
+                var result = await dialog.ShowAsync();
+                if (result == FluentAvalonia.UI.Controls.ContentDialogResult.Primary)
+                {
+                    await ComponentManager.InstallMissingPreselectedAsync();
+                }
+            }
+            catch
+            {
+                // no dialog host (window closing etc.) - the Components tab with
+                // its banner and highlights remains the manual path
             }
         }
 
