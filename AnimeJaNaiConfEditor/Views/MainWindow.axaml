@@ -618,7 +618,7 @@
                                 </Button>
 
                                 <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" >
-                                  <CheckBox Grid.Column="0" IsChecked="{Binding EnableRife}" Content="Enable RIFE Interpolation" />
+                                  <CheckBox Grid.Column="0" IsChecked="{Binding EnableRife}" Content="Enable RIFE Interpolation" IsEnabled="{Binding RifeToggleEnabled}" />
                                   <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Whether or not to run RIFE video frame interpolation.</TextBlock>
                                 </Grid>
 

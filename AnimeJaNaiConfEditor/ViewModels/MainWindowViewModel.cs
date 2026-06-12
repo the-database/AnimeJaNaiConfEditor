@@ -19,8 +19,11 @@ namespace AnimeJaNaiConfEditor.ViewModels
     {
         private static readonly CultureInfo ENGLISH_CULTURE = CultureInfo.GetCultureInfo("en-US");
 
+        public static MainWindowViewModel? Instance { get; private set; }
+
         public MainWindowViewModel()
         {
+            Instance = this;
             AnimeJaNaiConf = ReadAnimeJaNaiConf(AnimeJaNaiConfPath, true);
             // Built after the user conf loads so the read-only default profiles reflect the saved
             // standard/sharp preset.
@@ -107,6 +110,15 @@ namespace AnimeJaNaiConfEditor.ViewModels
             }
             BackendNotice = notice;
             RifeMissing = !RifeOnDisk();
+
+            // per-chain RIFE toggles derive from RifeMissing; let them re-evaluate
+            foreach (var slot in AnimeJaNaiConf?.UpscaleSlots ?? [])
+            {
+                foreach (var chain in slot.Chains)
+                {
+                    chain.RaisePropertyChanged(nameof(UpscaleChain.RifeToggleEnabled));
+                }
+            }
         }
 
         public ComponentManagerViewModel ComponentManager { get; } = new();
@@ -1631,8 +1643,17 @@ chain_2_rife=no";
         public bool EnableRife
         {
             get => _enableRife;
-            set => this.RaiseAndSetIfChanged(ref _enableRife, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _enableRife, value);
+                this.RaisePropertyChanged(nameof(RifeToggleEnabled));
+            }
         }
+
+        // Enabling RIFE needs the models; disabling it must always be possible.
+        // So the toggle locks only in the unchecked-and-not-installed state.
+        public bool RifeToggleEnabled =>
+            EnableRife || !(MainWindowViewModel.Instance?.RifeMissing ?? false);
 
         private List<string> _rifeModelList = new(MainWindowViewModel.RifeModels);
 
