@@ -38,7 +38,7 @@ jobs:
 
     - name: Create zip archive
       shell: pwsh
-      run: Compress-Archive -Path staging\* -DestinationPath AnimeJaNaiConfEditor-portable-x64.zip -Force
+      run: Compress-Archive -Path staging\* -DestinationPath AnimeJaNaiManager-portable-x64.zip -Force
 
     - name: Create GitHub Release
       uses: ncipollo/release-action@v1
@@ -49,5 +49,5 @@ jobs:
         # releases/download/<tag>/ URL - draft assets 404 for unauthenticated requests.
         draft: false
         prerelease: false
-        artifacts: AnimeJaNaiConfEditor-portable-x64.zip
+        artifacts: AnimeJaNaiManager-portable-x64.zip
         token: ${{ secrets.GITHUB_TOKEN }}

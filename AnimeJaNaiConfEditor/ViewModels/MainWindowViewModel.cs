@@ -37,6 +37,28 @@ namespace AnimeJaNaiConfEditor.ViewModels
             SelectedMpvProfile = ReadCurrentProfileFromMpvConf();
 
             InitializeSelectedSlot();
+
+            _ = InitializeComponentManagerAsync();
+        }
+
+        public ComponentManagerViewModel ComponentManager { get; } = new();
+
+        private int _selectedTabIndex;
+        public int SelectedTabIndex
+        {
+            get => _selectedTabIndex;
+            set => this.RaiseAndSetIfChanged(ref _selectedTabIndex, value);
+        }
+
+        // First-run guidance: if the hardware's recommended components are missing
+        // (fresh slim install, or a GPU change), open on the Components tab.
+        private async Task InitializeComponentManagerAsync()
+        {
+            await ComponentManager.RefreshAsync();
+            if (ComponentManager.SetupNeeded)
+            {
+                SelectedTabIndex = 1;
+            }
         }
 
         // Rebuilds the read-only default profiles from DEFAULT_PROFILES_CONF, swapping each profile's
@@ -193,14 +215,31 @@ chain_2_rife=no";
 
         public string ExePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        private static readonly string BACKUP_PATH_RELATIVE = "./backups";
-        public string BackupPath => Path.GetFullPath(Path.Combine(ExePath, BACKUP_PATH_RELATIVE));
+        // Two layouts: at the install root the exe sits next to mpvnet.exe with the data in
+        // animejanai/ (3.4.0+); in the legacy layout (and `dotnet run` from the project
+        // output, which copies animejanai.conf + onnx/ beside the binary) the exe lives
+        // inside the data directory itself.
+        public static bool AtInstallRoot { get; } =
+            !File.Exists(Path.Combine(AppContext.BaseDirectory, "animejanai.conf")) &&
+            File.Exists(Path.Combine(AppContext.BaseDirectory, "animejanai", "animejanai.conf"));
 
-        public string MpvConfPath => Path.GetFullPath(Path.Combine(ExePath, "../portable_config/mpv.conf"));
+        // animejanai/: conf, onnx models, rife models, benchmarks, backups
+        public static string DataDir { get; } = Path.GetFullPath(AtInstallRoot
+            ? Path.Combine(AppContext.BaseDirectory, "animejanai")
+            : AppContext.BaseDirectory);
 
-        public string AnimeJaNaiConfPath => Path.GetFullPath(Path.Combine(ExePath, "./animejanai.conf"));
+        // install root: mpvnet.exe, AnimeJaNaiUpdater.exe, portable_config/
+        public static string RootDir { get; } = Path.GetFullPath(AtInstallRoot
+            ? AppContext.BaseDirectory
+            : Path.Combine(AppContext.BaseDirectory, ".."));
 
-        public string OnnxPath => Path.GetFullPath(Path.Combine(ExePath, "./onnx"));
+        public string BackupPath => Path.Combine(DataDir, "backups");
+
+        public string MpvConfPath => Path.Combine(RootDir, "portable_config", "mpv.conf");
+
+        public string AnimeJaNaiConfPath => Path.Combine(DataDir, "animejanai.conf");
+
+        public string OnnxPath => Path.Combine(DataDir, "onnx");
 
         private bool _showGlobalSettings = false; // TODO
         [DataMember]
@@ -427,7 +466,7 @@ chain_2_rife=no";
                 if (_rifeModels == null)
                 {
                     var models = new List<string>();
-                    var modelsPath = Path.Combine(AppContext.BaseDirectory, @"..\vs-plugins\models\rife");
+                    var modelsPath = Path.Combine(DataDir, "rife");
 
                     if (!Directory.Exists(modelsPath))
                     {
@@ -961,7 +1000,7 @@ chain_2_rife=no";
                 process.StartInfo.RedirectStandardError = false;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = false;
-                process.StartInfo.WorkingDirectory = ExePath;
+                process.StartInfo.WorkingDirectory = DataDir;
 
                 process.Start();
                 await process.WaitForExitAsync();

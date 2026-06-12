@@ -6,8 +6,9 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>0.0.6</Version>
-    <Title>AnimeJaNaiConfEditor</Title>
+    <Version>0.1.0</Version>
+    <Title>AnimeJaNai Manager</Title>
+    <AssemblyName>AnimeJaNaiManager</AssemblyName>
     <PackageIcon>logo.png</PackageIcon>
     <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>

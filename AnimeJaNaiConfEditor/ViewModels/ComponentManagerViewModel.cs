@@ -1,0 +1,279 @@
+using Avalonia.Collections;
+using Avalonia.Threading;
+using ReactiveUI;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace AnimeJaNaiConfEditor.ViewModels
+{
+    // One installable component pack (TensorRT runtime, per-GPU-generation kernels, RIFE
+    // models), as reported by `AnimeJaNaiUpdater.exe --components --json`.
+    public class ComponentItem : ViewModelBase
+    {
+        public string Name { get; init; } = "";
+        public long Bytes { get; init; }
+        public bool Installed { get; init; }
+        public bool Recommended { get; init; }
+
+        private bool _selected;
+        public bool Selected
+        {
+            get => _selected;
+            set => this.RaiseAndSetIfChanged(ref _selected, value);
+        }
+
+        public string SizeText => $"{Bytes / 1048576:N0} MB";
+
+        public string StateText => Installed ? "installed"
+            : Recommended ? "recommended for this PC" : "not installed";
+
+        public string Title => Name switch
+        {
+            "trt-runtime" => "TensorRT runtime",
+            "rife" => "RIFE interpolation models",
+            "trt-ptx" => "TensorRT kernels: other NVIDIA GPUs",
+            _ when Name.StartsWith("trt-sm") => $"TensorRT kernels: {SmFamily(Name[6..])}",
+            _ => Name,
+        };
+
+        public string Description => Name switch
+        {
+            "trt-runtime" => "The fastest upscaling engine, for NVIDIA GPUs. Without it, NVIDIA users fall back to the slower DirectML engine.",
+            "rife" => "Frame interpolation (e.g. 24 → 48 fps). Not needed if you only upscale.",
+            "trt-ptx" => "Fallback kernels for GPU generations without their own pack below. First engine build is slower.",
+            _ when Name.StartsWith("trt-sm") => "Engine-builder kernels matched to this GPU generation. Only needed on these GPUs.",
+            _ => "",
+        };
+
+        private static string SmFamily(string sm) => sm switch
+        {
+            "75" => "GeForce RTX 20 series (Turing)",
+            "80" or "86" => "GeForce RTX 30 series (Ampere)",
+            "89" => "GeForce RTX 40 series (Ada)",
+            "90" => "Hopper",
+            "100" or "120" => "GeForce RTX 50 series (Blackwell)",
+            _ => $"sm{sm}",
+        };
+    }
+
+    // Detects, installs, and removes component packs by shelling out to the updater, which
+    // owns all pack logic (release lookup, NVML GPU detection, components.json bookkeeping).
+    public class ComponentManagerViewModel : ViewModelBase
+    {
+        public static string UpdaterPath { get; } =
+            Path.Combine(MainWindowViewModel.RootDir, "AnimeJaNaiUpdater.exe");
+
+        public bool UpdaterFound => File.Exists(UpdaterPath);
+
+        public AvaloniaList<ComponentItem> Packs { get; } = [];
+
+        private string _gpuText = "Detecting hardware...";
+        public string GpuText
+        {
+            get => _gpuText;
+            set => this.RaiseAndSetIfChanged(ref _gpuText, value);
+        }
+
+        private string _statusLine = "";
+        public string StatusLine
+        {
+            get => _statusLine;
+            set => this.RaiseAndSetIfChanged(ref _statusLine, value);
+        }
+
+        private bool _setupNeeded;
+        public bool SetupNeeded
+        {
+            get => _setupNeeded;
+            set => this.RaiseAndSetIfChanged(ref _setupNeeded, value);
+        }
+
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _isBusy, value);
+                this.RaisePropertyChanged(nameof(NotBusy));
+            }
+        }
+
+        public bool NotBusy => !IsBusy;
+
+        private bool _loadFailed;
+        public bool LoadFailed
+        {
+            get => _loadFailed;
+            set => this.RaiseAndSetIfChanged(ref _loadFailed, value);
+        }
+
+        // Populates the pack list. Recommended-but-missing packs come back pre-checked, so
+        // first-time setup is "uncheck what you don't want, click Apply".
+        public async Task RefreshAsync()
+        {
+            if (!UpdaterFound)
+            {
+                GpuText = "AnimeJaNaiUpdater.exe not found next to the install - component management unavailable.";
+                LoadFailed = true;
+                return;
+            }
+
+            IsBusy = true;
+            StatusLine = "Checking installed components...";
+            try
+            {
+                var (exitCode, output) = await RunUpdaterAsync("--components --json", null);
+                if (exitCode != 0)
+                {
+                    throw new InvalidOperationException(output.Trim());
+                }
+
+                using var doc = JsonDocument.Parse(output);
+                var root = doc.RootElement;
+                var gpu = root.GetProperty("gpu");
+                bool nvidia = gpu.GetProperty("nvidia").GetBoolean();
+                GpuText = nvidia
+                    ? $"GPU: {gpu.GetProperty("name").GetString()} — TensorRT recommended"
+                    : "GPU: no NVIDIA device detected — the built-in DirectML engine covers AMD and Intel GPUs";
+
+                Packs.Clear();
+                foreach (var e in root.GetProperty("packs").EnumerateArray())
+                {
+                    var item = new ComponentItem
+                    {
+                        Name = e.GetProperty("name").GetString() ?? "",
+                        Bytes = e.GetProperty("bytes").GetInt64(),
+                        Installed = e.GetProperty("installed").GetBoolean(),
+                        Recommended = e.GetProperty("recommended").GetBoolean(),
+                    };
+                    item.Selected = item.Installed || item.Recommended;
+                    Packs.Add(item);
+                }
+
+                SetupNeeded = Packs.Any(p => p.Recommended && !p.Installed);
+                string? mismatch = root.TryGetProperty("version_mismatch", out var mm)
+                    ? mm.GetString() : null;
+                StatusLine = mismatch is not null
+                    ? mismatch + " Update first, then manage components."
+                    : "";
+                LoadFailed = false;
+            }
+            catch (Exception ex)
+            {
+                GpuText = "Could not load component information.";
+                StatusLine = ex.Message;
+                LoadFailed = true;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        // Installs every checked-but-missing pack and removes every unchecked-but-installed
+        // one, streaming the updater's progress output into the status line.
+        public async void Apply()
+        {
+            if (IsBusy)
+            {
+                return;
+            }
+
+            var toInstall = Packs.Where(p => p.Selected && !p.Installed).Select(p => p.Name).ToList();
+            var toRemove = Packs.Where(p => !p.Selected && p.Installed).Select(p => p.Name).ToList();
+            if (toInstall.Count == 0 && toRemove.Count == 0)
+            {
+                StatusLine = "Nothing to change.";
+                return;
+            }
+
+            IsBusy = true;
+            try
+            {
+                foreach (var name in toInstall)
+                {
+                    var (exitCode, output) = await RunUpdaterAsync($"--install {name}",
+                        line => StatusLine = $"{name}: {line}");
+                    if (exitCode != 0)
+                    {
+                        StatusLine = $"Installing {name} failed: {LastLine(output)}";
+                        return;
+                    }
+                }
+                foreach (var name in toRemove)
+                {
+                    StatusLine = $"Removing {name}...";
+                    var (exitCode, output) = await RunUpdaterAsync($"--remove {name}", null);
+                    if (exitCode != 0)
+                    {
+                        StatusLine = $"Removing {name} failed: {LastLine(output)}";
+                        return;
+                    }
+                }
+                StatusLine = "Done.";
+            }
+            finally
+            {
+                IsBusy = false;
+                await RefreshAsync();
+            }
+        }
+
+        public async void Refresh()
+        {
+            await RefreshAsync();
+        }
+
+        private static string LastLine(string s) =>
+            s.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+             .LastOrDefault() ?? "unknown error";
+
+        // Runs the updater hidden; onLine (marshalled to the UI thread) sees each output
+        // line live, the full output is returned for error reporting.
+        private static async Task<(int ExitCode, string Output)> RunUpdaterAsync(
+            string arguments, Action<string>? onLine)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = UpdaterPath,
+                Arguments = arguments,
+                WorkingDirectory = MainWindowViewModel.RootDir,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
+            using var process = new Process { StartInfo = psi };
+            var output = new System.Text.StringBuilder();
+            process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data is null)
+                {
+                    return;
+                }
+                output.AppendLine(e.Data);
+                if (onLine is not null && e.Data.Trim() is { Length: > 0 } line)
+                {
+                    Dispatcher.UIThread.Post(() => onLine(line));
+                }
+            };
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data is not null)
+                {
+                    output.AppendLine(e.Data);
+                }
+            };
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            await process.WaitForExitAsync();
+            return (process.ExitCode, output.ToString());
+        }
+    }
+}
