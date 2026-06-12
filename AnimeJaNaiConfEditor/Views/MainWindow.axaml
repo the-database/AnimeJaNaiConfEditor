@@ -208,11 +208,9 @@
                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Upscaling Backend</TextBlock>
                 <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TensorRtSelected}" Content="TensorRT" Command="{Binding AnimeJaNaiConf.SetTensorRtSelected}" />
                 <ToggleButton IsChecked="{Binding AnimeJaNaiConf.DirectMlSelected}" Content="DirectML" Command="{Binding AnimeJaNaiConf.SetDirectMlSelected}" />
-                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.NcnnSelected}" Content="NCNN" Command="{Binding AnimeJaNaiConf.SetNcnnSelected}" />
               </StackPanel>
               <TextBlock Grid.Column="1" Classes="help" Margin="40,0,0,0" xml:space="preserve"><Bold>TensorRT</Bold>: Fastest option but NVIDIA only. Supports fp16 and fp32 ONNX models. fp16 models are recommended for faster performance and reduced VRAM usage without any loss in quality. The initial engine generation may require several minutes but only needs to be done once.
-<Bold>DirectML</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but slower than TensorRT. Supports fp32 ONNX models only.
-<Bold>NCNN</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but typically slower than DirectML. Supports fp32 ONNX models only.
+<Bold>DirectML</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but slower than TensorRT.
   </TextBlock>
             </Grid>
 
@@ -701,7 +699,7 @@
         <Border Classes="border" IsVisible="{Binding ComponentManager.SetupNeeded}">
           <Grid ColumnDefinitions="Auto,*">
             <materialIcons:MaterialIcon Grid.Column="0" Kind="AlertCircleOutline" Width="20" Height="20" Foreground="Orange" VerticalAlignment="Top" Margin="0,2,8,0"/>
-            <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="This PC is missing components it can use. They are pre-checked below — uncheck anything you don't want, then click Apply changes."/>
+            <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="Components recommended for this PC are not installed. Check the highlighted items below, then click Apply changes to install them."/>
           </Grid>
         </Border>
         <ItemsControl ItemsSource="{Binding ComponentManager.Packs}" IsEnabled="{Binding ComponentManager.NotBusy}">
@@ -713,7 +711,10 @@
                   <StackPanel Grid.Column="1" Spacing="2">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                       <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
-                      <TextBlock Text="{Binding StateText}" Opacity="0.6" FontSize="12"/>
+                      <TextBlock Text="{Binding StateText}" Opacity="0.6" FontSize="12" IsVisible="{Binding !HighlightRecommended}"/>
+                      <Border Background="{DynamicResource SystemAccentColor}" CornerRadius="3" Padding="6,1" VerticalAlignment="Center" IsVisible="{Binding HighlightRecommended}">
+                        <TextBlock Text="recommended for this PC" FontSize="12" FontWeight="SemiBold"/>
+                      </Border>
                     </StackPanel>
                     <TextBlock Classes="help" Text="{Binding Description}"/>
                   </StackPanel>

@@ -594,10 +594,8 @@ chain_2_rife=no";
                 switch (backend)
                 {
                     case Backend.DirectML:
+                    case Backend.NCNN: // retired; the inference shim treats NCNN as DirectML
                         animeJaNaiConf.SetDirectMlSelected();
-                        break;
-                    case Backend.NCNN:
-                        animeJaNaiConf.SetNcnnSelected();
                         break;
                     case Backend.TensorRT:
                     default:
@@ -1108,7 +1106,6 @@ chain_2_rife=no";
                     x => x.EnableLogging,
                     x => x.TensorRtSelected,
                     x => x.DirectMlSelected,
-                    x => x.NcnnSelected,
                     x => x.TrtEngineSettings).Subscribe(x =>
                     {
                         Vm?.WriteAnimeJaNaiConf();
@@ -1161,17 +1158,6 @@ chain_2_rife=no";
             set
             {
                 this.RaiseAndSetIfChanged(ref _directMlSelected, value);
-            }
-        }
-
-        private bool _ncnnSelected = false;
-        [DataMember]
-        public bool NcnnSelected
-        {
-            get => _ncnnSelected;
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _ncnnSelected, value);
             }
         }
 
@@ -1376,24 +1362,15 @@ chain_2_rife=no";
         {
             TensorRtSelected = true;
             DirectMlSelected = false;
-            NcnnSelected = false;
         }
 
         public void SetDirectMlSelected()
         {
             DirectMlSelected = true;
             TensorRtSelected = false;
-            NcnnSelected = false;
         }
 
-        public void SetNcnnSelected()
-        {
-            NcnnSelected = true;
-            TensorRtSelected = false;
-            DirectMlSelected = false;
-        }
-
-        public Backend SelectedBackend => TensorRtSelected ? Backend.TensorRT : DirectMlSelected ? Backend.DirectML : NcnnSelected ? Backend.NCNN : Backend.TensorRT;
+        public Backend SelectedBackend => DirectMlSelected ? Backend.DirectML : Backend.TensorRT;
     }
 
     [DataContract]

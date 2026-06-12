@@ -29,8 +29,11 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public string SizeText => $"{Bytes / 1048576:N0} MB";
 
-        public string StateText => Installed ? "installed"
-            : Recommended ? "recommended for this PC" : "optional";
+        public string StateText => Installed ? "installed" : "optional";
+
+        // accent-tagged in the UI instead of pre-checked: recommendations should
+        // be visible, not pre-decided
+        public bool HighlightRecommended => Recommended && !Installed;
 
         public string Title => Name switch
         {
@@ -165,11 +168,13 @@ namespace AnimeJaNaiConfEditor.ViewModels
                     {
                         continue;
                     }
-                    item.Selected = item.Preselect;
+                    // checked = currently installed (the checkbox is desired state);
+                    // recommended items are highlighted, never pre-checked
+                    item.Selected = item.Installed;
                     Packs.Add(item);
                 }
 
-                SetupNeeded = Packs.Any(p => p.Preselect && !p.Installed);
+                SetupNeeded = Packs.Any(p => p.Recommended && !p.Installed);
                 string? mismatch = root.TryGetProperty("version_mismatch", out var mm)
                     ? mm.GetString() : null;
                 StatusLine = mismatch is not null
