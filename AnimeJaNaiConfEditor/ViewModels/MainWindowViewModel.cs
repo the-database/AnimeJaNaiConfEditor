@@ -38,7 +38,75 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
             InitializeSelectedSlot();
 
+            RefreshComponentAwareness();
+            ComponentManager.Refreshed += RefreshComponentAwareness;
             _ = InitializeComponentManagerAsync();
+        }
+
+        // ---- component awareness for the Profiles tab -------------------------------------
+        // Install state comes from the disk (works offline); GPU identity comes from the
+        // component engine once its refresh completes.
+
+        public static bool TrtOnDisk() =>
+            File.Exists(Path.Combine(DataDir, "inference", "nvinfer_11.dll"));
+
+        public static bool RifeOnDisk() =>
+            Directory.Exists(Path.Combine(DataDir, "rife")) &&
+            Directory.EnumerateFiles(Path.Combine(DataDir, "rife"), "*.onnx").Any();
+
+        private bool _trtSelectable = true;
+        public bool TrtSelectable
+        {
+            get => _trtSelectable;
+            set => this.RaiseAndSetIfChanged(ref _trtSelectable, value);
+        }
+
+        private string _backendNotice = "";
+        public string BackendNotice
+        {
+            get => _backendNotice;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _backendNotice, value);
+                this.RaisePropertyChanged(nameof(HasBackendNotice));
+            }
+        }
+
+        public bool HasBackendNotice => !string.IsNullOrEmpty(BackendNotice);
+
+        private bool _rifeMissing;
+        public bool RifeMissing
+        {
+            get => _rifeMissing;
+            set => this.RaiseAndSetIfChanged(ref _rifeMissing, value);
+        }
+
+        public void RefreshComponentAwareness()
+        {
+            bool trtInstalled = TrtOnDisk();
+            bool? nvidia = ComponentManager.GpuNvidia;
+            bool trtUsable = trtInstalled && nvidia != false;
+            TrtSelectable = trtUsable;
+
+            string notice = "";
+            if (!trtUsable)
+            {
+                // a conf pointing at an unusable backend would only fail at playback;
+                // flip it to the engine that ships in every install and say so
+                string flipped = "";
+                if (AnimeJaNaiConf != null && AnimeJaNaiConf.TensorRtSelected)
+                {
+                    AnimeJaNaiConf.SetDirectMlSelected();
+                    flipped = "Switched to DirectML: ";
+                }
+                notice = nvidia == false
+                    ? flipped + "TensorRT requires an NVIDIA GPU."
+                    : ComponentManager.TrtPackAvailable
+                        ? flipped + "TensorRT is not installed — install it from the Components tab for the best performance on NVIDIA GPUs."
+                        : flipped + "TensorRT is not installed.";
+            }
+            BackendNotice = notice;
+            RifeMissing = !RifeOnDisk();
         }
 
         public ComponentManagerViewModel ComponentManager { get; } = new();

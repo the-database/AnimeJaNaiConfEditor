@@ -75,6 +75,16 @@ namespace AnimeJaNaiConfEditor.ViewModels
 
         public AvaloniaList<ComponentItem> Packs { get; } = [];
 
+        // GPU identity from the engine's NVML detection; null until a refresh
+        // has completed (callers fall back to disk-state-only behavior).
+        public bool? GpuNvidia { get; private set; }
+
+        public bool TrtPackAvailable { get; private set; }
+
+        // Raised on the UI thread after every refresh (including after Apply),
+        // so the Profiles tab can re-derive its component awareness.
+        public event Action? Refreshed;
+
         private string _gpuText = "Detecting hardware...";
         public string GpuText
         {
@@ -144,6 +154,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
                 GpuText = nvidia
                     ? $"GPU: {gpu.GetProperty("name").GetString()} — TensorRT recommended"
                     : "GPU: no NVIDIA device detected — the built-in DirectML engine covers AMD and Intel GPUs";
+                GpuNvidia = nvidia;
 
                 Packs.Clear();
                 foreach (var e in root.GetProperty("packs").EnumerateArray())
@@ -174,6 +185,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
                     Packs.Add(item);
                 }
 
+                TrtPackAvailable = Packs.Any(p => p.Name == "trt-runtime");
                 SetupNeeded = Packs.Any(p => p.Recommended && !p.Installed);
                 string? mismatch = root.TryGetProperty("version_mismatch", out var mm)
                     ? mm.GetString() : null;
@@ -191,6 +203,7 @@ namespace AnimeJaNaiConfEditor.ViewModels
             finally
             {
                 IsBusy = false;
+                Refreshed?.Invoke();
             }
         }
 

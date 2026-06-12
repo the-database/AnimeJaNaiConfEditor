@@ -206,13 +206,15 @@
             <Grid ColumnDefinitions="Auto,*" VerticalAlignment="Center" Margin="10,10,0,10">
               <StackPanel Grid.Column="0" Orientation="Horizontal">
                 <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Upscaling Backend</TextBlock>
-                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TensorRtSelected}" Content="TensorRT" Command="{Binding AnimeJaNaiConf.SetTensorRtSelected}" />
+                <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TensorRtSelected}" Content="TensorRT" Command="{Binding AnimeJaNaiConf.SetTensorRtSelected}" IsEnabled="{Binding TrtSelectable}" />
                 <ToggleButton IsChecked="{Binding AnimeJaNaiConf.DirectMlSelected}" Content="DirectML" Command="{Binding AnimeJaNaiConf.SetDirectMlSelected}" />
               </StackPanel>
               <TextBlock Grid.Column="1" Classes="help" Margin="40,0,0,0" xml:space="preserve"><Bold>TensorRT</Bold>: Fastest option but NVIDIA only. Supports fp16 and fp32 ONNX models. fp16 models are recommended for faster performance and reduced VRAM usage without any loss in quality. The initial engine generation may require several minutes but only needs to be done once.
 <Bold>DirectML</Bold>: Compatible with NVIDIA, AMD, and Intel GPUs but slower than TensorRT.
   </TextBlock>
             </Grid>
+
+            <TextBlock Margin="10,0,0,10" TextWrapping="Wrap" Foreground="Orange" IsVisible="{Binding HasBackendNotice}" Text="{Binding BackendNotice}" />
 
             <StackPanel IsVisible="{Binding AnimeJaNaiConf.TensorRtSelected}" Margin="10,0,0,10">
               <TextBlock Margin="0,10,0,5" Text="TensorRT Engine Settings" />
@@ -619,6 +621,10 @@
                                   <CheckBox Grid.Column="0" IsChecked="{Binding EnableRife}" Content="Enable RIFE Interpolation" />
                                   <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Whether or not to run RIFE video frame interpolation.</TextBlock>
                                 </Grid>
+
+                                <TextBlock Margin="10,0,0,10" TextWrapping="Wrap" Foreground="Orange"
+                                           IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).RifeMissing}"
+                                           Text="RIFE models are not installed — install them from the Components tab to use interpolation." />
 
                                 <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
                                   <StackPanel Grid.Column="0" Orientation="Horizontal">
