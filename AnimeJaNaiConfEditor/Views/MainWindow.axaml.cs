@@ -371,7 +371,7 @@ namespace AnimeJaNaiConfEditor.Views
             };
             var note = new TextBox
             {
-                Watermark = "Optional note — anything notable not already captured above (e.g. undervolt, cooling, laptop on battery)",
+                Watermark = "Optional note: anything notable not already captured above (e.g. undervolt, cooling, laptop on battery)",
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 MaxLength = 280,

@@ -635,7 +635,7 @@
 
                                 <TextBlock Margin="10,0,0,10" TextWrapping="Wrap" Foreground="Orange"
                                            IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).RifeMissing}"
-                                           Text="RIFE models are not installed — install them from the Components tab to use interpolation." />
+                                           Text="RIFE models are not installed. Install them from the Components tab to use interpolation." />
 
                                 <Grid ColumnDefinitions="Auto,*" Margin="10,10,0,10" IsVisible="{Binding EnableRife}">
                                   <StackPanel Grid.Column="0" Orientation="Horizontal">
