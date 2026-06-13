@@ -39,6 +39,8 @@
     <PackageReference Include="Material.Icons.Avalonia" Version="2.4.1" />
     <PackageReference Include="ReactiveUI.Avalonia" Version="11.4.12" />
     <PackageReference Include="Salaros.ConfigParser" Version="0.3.8" />
+    <!-- WMI (Win32_VideoController / Win32_Processor) for benchmark-submission hardware info -->
+    <PackageReference Include="System.Management" Version="10.0.0" />
   </ItemGroup>
 
 

@@ -186,6 +186,17 @@
           <TextBlock Width="280" TextWrapping="WrapWithOverflow" Margin="0,5,10,0" FontSize="10" Opacity=".5">Launch the benchmark tool to measure the performance of your hardware for various combinations of upscaling settings. This may take several minutes.</TextBlock>
         </StackPanel>
       </Button>
+      <Button HorizontalAlignment="Stretch" FontSize="13" Padding="10" Click="SubmitBenchmarkButtonClick" HorizontalContentAlignment="Left">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <materialIcons:MaterialIcon Kind="CloudUpload" VerticalAlignment="Center" />
+            <TextBlock Margin="10,0,10,0" VerticalAlignment="Center" Width="190">
+              Submit to Catalog
+            </TextBlock>
+          </StackPanel>
+          <TextBlock Width="280" TextWrapping="WrapWithOverflow" Margin="0,5,10,0" FontSize="10" Opacity=".5">Share your latest benchmark results with the community catalog. You'll see exactly what is sent before anything leaves your machine. No account required.</TextBlock>
+        </StackPanel>
+      </Button>
     </StackPanel>
     </ScrollViewer>
 

@@ -1,3 +1,4 @@
+using AnimeJaNaiConfEditor.Services;
 using AnimeJaNaiConfEditor.ViewModels;
 using Avalonia;
 using Avalonia.Controls;
@@ -314,6 +315,120 @@ namespace AnimeJaNaiConfEditor.Views
                     }
                 }
             }
+        }
+
+        private async void SubmitBenchmarkButtonClick(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is not MainWindowViewModel vm) return;
+
+            var benchmarkTxt = Path.Combine(vm.ExePath, "benchmark.txt");
+            if (!File.Exists(benchmarkTxt))
+            {
+                await ShowInfoDialog("No benchmark results yet",
+                    "Run the benchmark first (\"Run Benchmarks\"), then come back here to submit the results.");
+                return;
+            }
+
+            BenchmarkSubmission sub;
+            try
+            {
+                sub = await Task.Run(() =>
+                {
+                    var s = BenchmarkSubmission.FromBenchmarkFile(benchmarkTxt);
+                    s.FillSystemInfo(vm.ExePath);
+                    return s;
+                });
+            }
+            catch (Exception ex)
+            {
+                await ShowInfoDialog("Couldn't read benchmark results", ex.Message);
+                return;
+            }
+
+            if (!sub.HasResults)
+            {
+                await ShowInfoDialog("No benchmark results found",
+                    "benchmark.txt didn't contain any results. Try running the benchmark again.");
+                return;
+            }
+
+            var preview = new TextBox
+            {
+                IsReadOnly = true,
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.NoWrap,
+                Text = sub.ToPreviewJson(),
+                MaxHeight = 260,
+                FontFamily = new FontFamily("Consolas, Cascadia Mono, monospace"),
+                FontSize = 11,
+            };
+            var note = new TextBox
+            {
+                Watermark = "Optional note, e.g. overclock or driver details (included in the submission)",
+                AcceptsReturn = true,
+                MaxLength = 280,
+                MaxHeight = 80,
+                Margin = new Thickness(0, 8, 0, 0),
+            };
+            var panel = new StackPanel { Width = 460 };
+            panel.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Text = "This is exactly what will be sent to the community benchmark catalog. " +
+                       "No account or login is required, and nothing else leaves your machine.",
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Margin = new Thickness(0, 8, 0, 2),
+                Opacity = .6,
+                FontSize = 11,
+                Text = "Data to submit:",
+            });
+            panel.Children.Add(preview);
+            panel.Children.Add(note);
+
+            const string submitResult = "submit";
+            var td = new TaskDialog
+            {
+                Title = "Submit benchmark to community catalog",
+                Content = panel,
+                ShowProgressBar = false,
+                Buttons =
+                {
+                    new TaskDialogButton("Submit", submitResult),
+                    TaskDialogButton.CancelButton,
+                },
+            };
+
+            (bool ok, string message)? outcome = null;
+            td.Closing += async (s, ev) =>
+            {
+                if (!Equals(ev.Result, submitResult)) return;
+                var deferral = ev.GetDeferral();
+                td.ShowProgressBar = true;
+                td.SetProgressBarState(0, TaskDialogProgressState.Indeterminate);
+                sub.Note = note.Text?.Trim() ?? "";
+                outcome = await sub.SubmitAsync();
+                deferral.Complete();
+            };
+
+            td.XamlRoot = VisualRoot as Visual;
+            await td.ShowAsync();
+
+            if (outcome is { } result)
+                await ShowInfoDialog(result.ok ? "Submitted" : "Submission failed", result.message);
+        }
+
+        private async Task ShowInfoDialog(string title, string message)
+        {
+            var td = new TaskDialog
+            {
+                Title = title,
+                Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, MaxWidth = 460 },
+                Buttons = { TaskDialogButton.OKButton },
+            };
+            td.XamlRoot = VisualRoot as Visual;
+            await td.ShowAsync();
         }
     }
 }
