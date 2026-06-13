@@ -319,9 +319,9 @@ namespace AnimeJaNaiConfEditor.Views
 
         private async void SubmitBenchmarkButtonClick(object? sender, RoutedEventArgs e)
         {
-            if (DataContext is not MainWindowViewModel vm) return;
+            if (DataContext is not MainWindowViewModel) return;
 
-            var benchmarkTxt = Path.Combine(vm.ExePath, "benchmark.txt");
+            var benchmarkTxt = Path.Combine(MainWindowViewModel.DataDir, "benchmark.txt");
             if (!File.Exists(benchmarkTxt))
             {
                 await ShowInfoDialog("No benchmark results yet",
@@ -335,7 +335,7 @@ namespace AnimeJaNaiConfEditor.Views
                 sub = await Task.Run(() =>
                 {
                     var s = BenchmarkSubmission.FromBenchmarkFile(benchmarkTxt);
-                    s.FillSystemInfo(vm.ExePath);
+                    s.FillSystemInfo(MainWindowViewModel.DataDir);
                     return s;
                 });
             }
