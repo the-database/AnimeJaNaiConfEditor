@@ -3,6 +3,7 @@ using AnimeJaNaiConfEditor.ViewModels;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -366,10 +367,14 @@ namespace AnimeJaNaiConfEditor.Views
             {
                 Watermark = "Optional note, e.g. overclock or driver details (included in the submission)",
                 AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
                 MaxLength = 280,
-                MaxHeight = 80,
+                MinHeight = 60,
+                MaxHeight = 90,
                 Margin = new Thickness(0, 8, 0, 0),
             };
+            ScrollViewer.SetHorizontalScrollBarVisibility(note, ScrollBarVisibility.Disabled);
+            ScrollViewer.SetVerticalScrollBarVisibility(note, ScrollBarVisibility.Auto);
             var panel = new StackPanel { Width = 460 };
             panel.Children.Add(new TextBlock
             {
