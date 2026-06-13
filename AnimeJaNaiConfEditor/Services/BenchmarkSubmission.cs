@@ -66,6 +66,8 @@ namespace AnimeJaNaiConfEditor.Services
         [JsonPropertyName("driver")] public string Driver { get; set; } = "";
         // template name (Balanced/Performance) -> resolution -> fps
         [JsonPropertyName("results")] public Dictionary<string, Dictionary<string, double>> Results { get; set; } = new();
+        // Optional credit: GitHub/Discord handle or any name; blank = anonymous.
+        [JsonPropertyName("submitted_by")] public string SubmittedBy { get; set; } = "";
         [JsonPropertyName("note")] public string Note { get; set; } = "";
 
         static readonly JsonSerializerOptions PreviewOpts = new() { WriteIndented = true };

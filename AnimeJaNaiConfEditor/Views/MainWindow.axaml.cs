@@ -363,6 +363,12 @@ namespace AnimeJaNaiConfEditor.Views
                 FontFamily = new FontFamily("Consolas, Cascadia Mono, monospace"),
                 FontSize = 11,
             };
+            var submittedBy = new TextBox
+            {
+                Watermark = "Optional: GitHub or Discord username to credit you (blank = anonymous)",
+                MaxLength = 60,
+                Margin = new Thickness(0, 8, 0, 0),
+            };
             var note = new TextBox
             {
                 Watermark = "Optional note, e.g. overclock or driver details (included in the submission)",
@@ -375,12 +381,22 @@ namespace AnimeJaNaiConfEditor.Views
             };
             ScrollViewer.SetHorizontalScrollBarVisibility(note, ScrollBarVisibility.Disabled);
             ScrollViewer.SetVerticalScrollBarVisibility(note, ScrollBarVisibility.Auto);
+
             var panel = new StackPanel { Width = 460 };
             panel.Children.Add(new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
-                Text = "This is exactly what will be sent to the community benchmark catalog. " +
-                       "No account or login is required, and nothing else leaves your machine.",
+                Text = "Below is the hardware data that will be sent to the community benchmark catalog. " +
+                       "No account or login is required, and nothing else leaves your machine. " +
+                       "You can optionally add your name and a note.",
+            });
+            panel.Children.Add(new HyperlinkButton
+            {
+                Content = "Browse the catalog first: " + BenchmarkSubmission.CatalogUrl,
+                NavigateUri = new Uri(BenchmarkSubmission.CatalogUrl),
+                Padding = new Thickness(0),
+                Margin = new Thickness(0, 4, 0, 0),
+                FontSize = 12,
             });
             panel.Children.Add(new TextBlock
             {
@@ -390,6 +406,7 @@ namespace AnimeJaNaiConfEditor.Views
                 Text = "Data to submit:",
             });
             panel.Children.Add(preview);
+            panel.Children.Add(submittedBy);
             panel.Children.Add(note);
 
             const string submitResult = "submit";
@@ -412,6 +429,7 @@ namespace AnimeJaNaiConfEditor.Views
                 var deferral = ev.GetDeferral();
                 td.ShowProgressBar = true;
                 td.SetProgressBarState(0, TaskDialogProgressState.Indeterminate);
+                sub.SubmittedBy = submittedBy.Text?.Trim() ?? "";
                 sub.Note = note.Text?.Trim() ?? "";
                 outcome = await sub.SubmitAsync();
                 deferral.Complete();
