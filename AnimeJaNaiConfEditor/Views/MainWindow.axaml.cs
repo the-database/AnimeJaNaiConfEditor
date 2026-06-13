@@ -365,13 +365,13 @@ namespace AnimeJaNaiConfEditor.Views
             };
             var submittedBy = new TextBox
             {
-                Watermark = "Optional: GitHub or Discord username to credit you (blank = anonymous)",
+                Watermark = "Optional: a name or handle to credit you (blank = anonymous)",
                 MaxLength = 60,
                 Margin = new Thickness(0, 8, 0, 0),
             };
             var note = new TextBox
             {
-                Watermark = "Optional note, e.g. overclock or driver details (included in the submission)",
+                Watermark = "Optional note — anything notable not already captured above (e.g. undervolt, cooling, laptop on battery)",
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 MaxLength = 280,
