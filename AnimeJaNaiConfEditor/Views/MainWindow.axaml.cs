@@ -413,6 +413,17 @@ namespace AnimeJaNaiConfEditor.Views
             ScrollViewer.SetHorizontalScrollBarVisibility(note, ScrollBarVisibility.Disabled);
             ScrollViewer.SetVerticalScrollBarVisibility(note, ScrollBarVisibility.Auto);
 
+            // Keep the preview in sync with the name/note fields so it always shows exactly
+            // what will be sent (otherwise typed values look like they'll submit blank).
+            void RefreshPreview()
+            {
+                sub.SubmittedBy = submittedBy.Text?.Trim() ?? "";
+                sub.Note = note.Text?.Trim() ?? "";
+                preview.Text = sub.ToPreviewJson();
+            }
+            submittedBy.TextChanged += (_, _) => RefreshPreview();
+            note.TextChanged += (_, _) => RefreshPreview();
+
             var panel = new StackPanel { Width = 460 };
             panel.Children.Add(new TextBlock
             {
