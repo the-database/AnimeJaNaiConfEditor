@@ -318,6 +318,37 @@ namespace AnimeJaNaiConfEditor.Views
             }
         }
 
+        private async void RunBenchmarkButtonClick(object? sender, RoutedEventArgs e)
+        {
+            if (DataContext is not MainWindowViewModel vm) return;
+
+            const string runResult = "run";
+            var td = new TaskDialog
+            {
+                Title = "Run playback benchmark",
+                Content = new TextBlock
+                {
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 460,
+                    Text =
+                        "This measures your real playback fps across several resolutions for the " +
+                        "Balanced and Performance templates.\n\n" +
+                        "mpv windows will open and close on their own while it runs. Do not close " +
+                        "or click them, or the results will be invalid.\n\n" +
+                        "The first run builds a TensorRT engine per resolution (about a minute " +
+                        "each, cached afterward), so the whole benchmark takes a few minutes.",
+                },
+                Buttons =
+                {
+                    new TaskDialogButton("Start benchmark", runResult),
+                    TaskDialogButton.CancelButton,
+                },
+            };
+            td.XamlRoot = VisualRoot as Visual;
+            if (Equals(await td.ShowAsync(), runResult))
+                vm.LaunchBenchmark();
+        }
+
         private async void SubmitBenchmarkButtonClick(object? sender, RoutedEventArgs e)
         {
             if (DataContext is not MainWindowViewModel) return;
