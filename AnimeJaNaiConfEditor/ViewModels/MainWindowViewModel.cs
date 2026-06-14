@@ -693,8 +693,8 @@ chain_2_rife=no";
         }
 
         // Keep CONFIG_VERSION, the current default, and the historical-defaults set in sync with
-        // animejanai_config.py in the mpv-upscale-2x_animejanai repo.
-        private const int CONFIG_VERSION = 2;
+        // aji_conf.cpp in the animejanai-inference repo (the native filter's conf loader).
+        private const int CONFIG_VERSION = 3;
         private const string DEFAULT_TRT_ENGINE_SETTINGS =
             "--stronglyTyped --optShapes=input:%video_resolution% --inputIOFormats=fp16:chw --outputIOFormats=fp16:chw --builderOptimizationLevel=5 --tacticSources=-CUDNN,-CUBLAS,-CUBLAS_LT --skipInference";
         private static readonly HashSet<string> LEGACY_DEFAULT_TRT_ENGINE_SETTINGS = new()
@@ -735,6 +735,11 @@ chain_2_rife=no";
                 }
             }
 
+            if (int.TryParse(parser.GetValue("global", "default_slot", ""), out var defaultSlot))
+            {
+                animeJaNaiConf.DefaultSlot = defaultSlot;
+            }
+
             // config_version drives migrations (absent => 1, the pre-versioning schema).
             int.TryParse(parser.GetValue("global", "config_version", "1"), out var configVersion);
             var trtEngineSettings = parser.GetValue("global", "trt_engine_settings", "");
@@ -743,6 +748,14 @@ chain_2_rife=no";
             if (configVersion < 2 && LEGACY_DEFAULT_TRT_ENGINE_SETTINGS.Contains(trtEngineSettings))
             {
                 trtEngineSettings = "";
+            }
+            // v2 -> v3: TRT 11 strongly-typed ONNX dropped --fp16/--bf16 (the backend strips them and
+            // the precision selector was removed); rewrite either to --stronglyTyped so a migrated
+            // custom value stays valid, collapsing a duplicate if both were present.
+            if (configVersion < 3 && Regex.IsMatch(trtEngineSettings, @"--(fp16|bf16)\b"))
+            {
+                trtEngineSettings = Regex.Replace(trtEngineSettings, @"--(fp16|bf16)\b", "--stronglyTyped");
+                trtEngineSettings = Regex.Replace(trtEngineSettings, @"--stronglyTyped(\s+--stronglyTyped)+", "--stronglyTyped");
             }
             animeJaNaiConf.TrtEngineSettings = string.IsNullOrEmpty(trtEngineSettings)
                 ? DEFAULT_TRT_ENGINE_SETTINGS
@@ -987,6 +1000,12 @@ chain_2_rife=no";
             parser.SetValue("global", "backend", conf.SelectedBackend.ToString());
             parser.SetValue("global", "backend_auto_fallback", conf.BackendAutoFallback ? "yes" : "no");
             parser.SetValue("global", "logging", conf.EnableLogging ? "yes" : "no");
+            // Write-minimal: only persist default_slot when the user picked one (absent => the vf
+            // line's baked-in Balanced slot applies).
+            if (conf.DefaultSlot is int defaultSlot)
+            {
+                parser.SetValue("global", "default_slot", defaultSlot.ToString(ENGLISH_CULTURE));
+            }
             // Write-minimal: only persist trt_engine_settings when it differs from the current
             // default, so future default changes apply automatically to users who didn't customize.
             if (conf.TrtEngineSettings != DEFAULT_TRT_ENGINE_SETTINGS)
@@ -1151,55 +1170,58 @@ chain_2_rife=no";
         {
             if (SelectedMpvProfile == CurrentSlot.MpvProfileName)
             {
+                // Toggling off the current default leaves the player upscaling-off by default.
                 SelectedMpvProfile = null;
-                WriteCurrentProfileToMpvConf(true);
+                WriteDefaultProfile(true);
             }
             else
             {
                 SelectedMpvProfile = CurrentSlot.MpvProfileName;
-                WriteCurrentProfileToMpvConf();
+                WriteDefaultProfile();
             }
         }
 
-        private string? ReadCurrentProfileFromMpvConf()
+        // The default profile is stored as [global] default_slot in animejanai.conf and applied by
+        // scripts/animejanai_backend.lua at startup. These map the Manager's mpv profile names to the
+        // native filter slot numbers the player switches between: Quality/Balanced/Performance are the
+        // built-in slots 1001/1002/1003, custom profiles use their own number 1-9, and Off is slot 0.
+        private static int? MpvProfileToSlot(string? mpvProfile)
         {
-            if (!MpvConfDetected)
-            {
-                // can't find mpv.conf - ignore and return
-                return null;
-            }
-
-            var confText = File.ReadAllText(MpvConfPath);
-
-            string pattern = @"\[default\]\s*profile=(.+)$";
-
-            Match match = Regex.Match(confText, pattern, RegexOptions.Multiline);
-
-            if (match.Success)
-            {
-                return match.Groups[1].Value.Trim();
-            }
-            else
+            if (string.IsNullOrEmpty(mpvProfile))
             {
                 return null;
             }
+            switch (mpvProfile)
+            {
+                case "upscale-off": return 0;
+                case "upscale-on-quality": return 1001;
+                case "upscale-on-balanced": return 1002;
+                case "upscale-on-performance": return 1003;
+            }
+            var m = Regex.Match(mpvProfile, @"^upscale-on-(\d+)$");
+            return m.Success ? int.Parse(m.Groups[1].Value, ENGLISH_CULTURE) : (int?)null;
         }
 
-        private void WriteCurrentProfileToMpvConf(bool upscaleOff = false)
+        private static string? SlotToMpvProfile(int? slot)
         {
-            if (!MpvConfDetected)
+            switch (slot)
             {
-                // can't find mpv.conf - ignore and return
-                return;
+                case null: return null;
+                case 0: return "upscale-off";
+                case 1001: return "upscale-on-quality";
+                case 1002: return "upscale-on-balanced";
+                case 1003: return "upscale-on-performance";
             }
+            return slot.Value is >= 1 and <= 9 ? $"upscale-on-{slot.Value}" : null;
+        }
 
-            var confText = File.ReadAllText(MpvConfPath);
-            var pattern = @"\[default\]\s*profile=(.+)$";
-            var replacementProfile = upscaleOff ? "upscale-off" : CurrentSlot.MpvProfileName;
+        private string? ReadCurrentProfileFromMpvConf() => SlotToMpvProfile(AnimeJaNaiConf?.DefaultSlot);
 
-            var result = Regex.Replace(confText, pattern, $"[default]\nprofile={replacementProfile}", RegexOptions.Multiline);
-
-            File.WriteAllText(MpvConfPath, result);
+        private void WriteDefaultProfile(bool upscaleOff = false)
+        {
+            var profile = upscaleOff ? "upscale-off" : CurrentSlot.MpvProfileName;
+            AnimeJaNaiConf.DefaultSlot = MpvProfileToSlot(profile);
+            WriteAnimeJaNaiConf();
         }
 
         private void InitializeSelectedSlot()
@@ -1272,6 +1294,18 @@ chain_2_rife=no";
             set => this.RaiseAndSetIfChanged(ref _enableLogging, value);
         }
 
+        // The slot the player loads by default at startup (Quality/Balanced/Performance = 1001/1002/
+        // 1003, custom profiles = 1-9, Off = 0). null means no default is stored, so the slot baked
+        // into the vf line (Balanced) applies. Persisted as [global] default_slot in animejanai.conf
+        // and applied by scripts/animejanai_backend.lua. Not auto-saved here; the Profiles tab writes
+        // it explicitly via SelectDefaultProfile.
+        private int? _defaultSlot;
+        public int? DefaultSlot
+        {
+            get => _defaultSlot;
+            set => this.RaiseAndSetIfChanged(ref _defaultSlot, value);
+        }
+
         private bool _tensorRtSelected = true;
         [DataMember]
         public bool TensorRtSelected
@@ -1329,9 +1363,6 @@ chain_2_rife=no";
             set
             {
                 this.RaiseAndSetIfChanged(ref _trtEngineSettings, value);
-                this.RaisePropertyChanged(nameof(TrtFp16Selected));
-                this.RaisePropertyChanged(nameof(TrtBf16Selected));
-                this.RaisePropertyChanged(nameof(TrtStronglyTypedSelected));
                 this.RaisePropertyChanged(nameof(TrtStaticOnnxSelected));
                 this.RaisePropertyChanged(nameof(TrtStaticSelected));
                 this.RaisePropertyChanged(nameof(TrtDynamicSelected));
@@ -1342,9 +1373,6 @@ chain_2_rife=no";
             }
         }
 
-        public bool TrtFp16Selected => TrtEngineSettings.Contains("--fp16");
-        public bool TrtBf16Selected => TrtEngineSettings.Contains("--bf16");
-        public bool TrtStronglyTypedSelected => TrtEngineSettings.Contains("--stronglyTyped");
         public bool TrtDynamicSelected => TrtEngineSettings.Contains("--minShapes=");
         public bool TrtStaticSelected => TrtEngineSettings.Contains("--optShapes=") && !TrtDynamicSelected;
         public bool TrtStaticOnnxSelected => !TrtEngineSettings.Contains("--optShapes=") && !TrtDynamicSelected;
@@ -1445,21 +1473,6 @@ chain_2_rife=no";
             if (idx >= 0)
                 return settings.Insert(idx, toInsert + " ");
             return settings + " " + toInsert;
-        }
-
-        public void SetTrtFp16()
-        {
-            TrtEngineSettings = TrtEngineSettings.Replace("--bf16", "--fp16").Replace("--stronglyTyped", "--fp16");
-        }
-
-        public void SetTrtBf16()
-        {
-            TrtEngineSettings = TrtEngineSettings.Replace("--fp16", "--bf16").Replace("--stronglyTyped", "--bf16");
-        }
-
-        public void SetTrtStronglyTyped()
-        {
-            TrtEngineSettings = TrtEngineSettings.Replace("--fp16", "--stronglyTyped").Replace("--bf16", "--stronglyTyped");
         }
 
         public void SetTrtStaticOnnx()

@@ -227,20 +227,12 @@
 
             <TextBlock Margin="10,0,0,10" TextWrapping="Wrap" Foreground="Orange" IsVisible="{Binding HasBackendNotice}" Text="{Binding BackendNotice}" />
 
+            <TextBlock Margin="10,0,0,10" Classes="help" TextWrapping="Wrap">Switching the backend takes effect after you restart the player.</TextBlock>
+
             <StackPanel IsVisible="{Binding AnimeJaNaiConf.TensorRtSelected}" Margin="10,0,0,10">
               <TextBlock Margin="0,10,0,5" Text="TensorRT Engine Settings" />
               <Border Classes="border">
                 <StackPanel Margin="10">
-
-                  <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,5">
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                      <TextBlock Margin="0,0,5,0" VerticalAlignment="Center">Precision</TextBlock>
-                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtFp16Selected}" Content="fp16" Command="{Binding AnimeJaNaiConf.SetTrtFp16}" />
-                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtBf16Selected}" Content="bf16" Command="{Binding AnimeJaNaiConf.SetTrtBf16}" />
-                      <ToggleButton IsChecked="{Binding AnimeJaNaiConf.TrtStronglyTypedSelected}" Content="stronglyTyped" Command="{Binding AnimeJaNaiConf.SetTrtStronglyTyped}" />
-                    </StackPanel>
-                    <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0" xml:space="preserve"><Bold>stronglyTyped</Bold> uses the precision defined within the ONNX model and is recommended. <Bold>fp16</Bold> and <Bold>bf16</Bold> force 16-bit precision for faster performance and lower VRAM usage.</TextBlock>
-                  </Grid>
 
                   <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,5">
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
@@ -321,6 +313,8 @@
               </Button>
               <TextBlock Grid.Column="1" Classes="help" Margin="20,0,0,0">Use this profile by default when launching mpv.</TextBlock>
             </Grid>
+
+            <TextBlock Margin="10,0,0,10" Classes="help" TextWrapping="Wrap">Profile edits apply when you switch profiles in the player, or after you restart it.</TextBlock>
 
             <ItemsControl ItemsSource="{Binding CurrentSlot.Chains}">
               <ItemsControl.ItemTemplate>
