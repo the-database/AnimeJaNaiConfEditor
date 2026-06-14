@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -19,6 +20,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 
 namespace AnimeJaNaiConfEditor.Views
@@ -384,22 +386,29 @@ namespace AnimeJaNaiConfEditor.Views
                 return;
             }
 
+            // The dialog's state: name/note are two-way bound; the JSON preview is derived
+            // reactively from them, so it always shows exactly what will be sent.
+            var model = new SubmitDialogModel(sub);
+
             var preview = new TextBox
             {
                 IsReadOnly = true,
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.NoWrap,
-                Text = sub.ToPreviewJson(),
                 MaxHeight = 260,
                 FontFamily = new FontFamily("Consolas, Cascadia Mono, monospace"),
                 FontSize = 11,
             };
+            preview.Bind(TextBox.TextProperty, new Binding(nameof(SubmitDialogModel.Preview)) { Mode = BindingMode.OneWay });
+
             var submittedBy = new TextBox
             {
                 Watermark = "Optional: a name or handle to credit you (blank = anonymous)",
                 MaxLength = 60,
                 Margin = new Thickness(0, 8, 0, 0),
             };
+            submittedBy.Bind(TextBox.TextProperty, new Binding(nameof(SubmitDialogModel.SubmittedBy)) { Mode = BindingMode.TwoWay });
+
             var note = new TextBox
             {
                 Watermark = "Optional note: anything notable not already captured above (e.g. undervolt, cooling, laptop on battery)",
@@ -410,21 +419,12 @@ namespace AnimeJaNaiConfEditor.Views
                 MaxHeight = 90,
                 Margin = new Thickness(0, 8, 0, 0),
             };
+            note.Bind(TextBox.TextProperty, new Binding(nameof(SubmitDialogModel.Note)) { Mode = BindingMode.TwoWay });
             ScrollViewer.SetHorizontalScrollBarVisibility(note, ScrollBarVisibility.Disabled);
             ScrollViewer.SetVerticalScrollBarVisibility(note, ScrollBarVisibility.Auto);
 
-            // Keep the preview in sync with the name/note fields so it always shows exactly
-            // what will be sent (otherwise typed values look like they'll submit blank).
-            void RefreshPreview()
-            {
-                sub.SubmittedBy = submittedBy.Text?.Trim() ?? "";
-                sub.Note = note.Text?.Trim() ?? "";
-                preview.Text = sub.ToPreviewJson();
-            }
-            submittedBy.TextChanged += (_, _) => RefreshPreview();
-            note.TextChanged += (_, _) => RefreshPreview();
-
-            var panel = new StackPanel { Width = 460 };
+            // Children inherit this DataContext, so the bindings above resolve against the model.
+            var panel = new StackPanel { Width = 460, DataContext = model };
             panel.Children.Add(new TextBlock
             {
                 TextWrapping = TextWrapping.Wrap,
@@ -471,9 +471,7 @@ namespace AnimeJaNaiConfEditor.Views
                 var deferral = ev.GetDeferral();
                 td.ShowProgressBar = true;
                 td.SetProgressBarState(0, TaskDialogProgressState.Indeterminate);
-                sub.SubmittedBy = submittedBy.Text?.Trim() ?? "";
-                sub.Note = note.Text?.Trim() ?? "";
-                outcome = await sub.SubmitAsync();
+                outcome = await sub.SubmitAsync();   // sub's name/note are kept current by SubmitDialogModel
                 deferral.Complete();
             };
 
@@ -482,6 +480,31 @@ namespace AnimeJaNaiConfEditor.Views
 
             if (outcome is { } result)
                 await ShowInfoDialog(result.ok ? "Submitted" : "Submission failed", result.message);
+        }
+
+        // Backs the submit dialog: name/note are two-way bound; the JSON preview is an
+        // ObservableAsPropertyHelper derived from them, so it stays in sync with what will be sent.
+        private sealed class SubmitDialogModel : ReactiveObject
+        {
+            private string _submittedBy = "";
+            private string _note = "";
+            private readonly ObservableAsPropertyHelper<string> _preview;
+
+            public SubmitDialogModel(BenchmarkSubmission sub)
+            {
+                _preview = this.WhenAnyValue(x => x.SubmittedBy, x => x.Note)
+                    .Do(t =>
+                    {
+                        sub.SubmittedBy = (t.Item1 ?? "").Trim();
+                        sub.Note = (t.Item2 ?? "").Trim();
+                    })
+                    .Select(_ => sub.ToPreviewJson())
+                    .ToProperty(this, x => x.Preview);
+            }
+
+            public string SubmittedBy { get => _submittedBy; set => this.RaiseAndSetIfChanged(ref _submittedBy, value); }
+            public string Note { get => _note; set => this.RaiseAndSetIfChanged(ref _note, value); }
+            public string Preview => _preview.Value;
         }
 
         private async Task ShowInfoDialog(string title, string message)
